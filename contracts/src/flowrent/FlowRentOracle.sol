@@ -87,4 +87,101 @@ contract FlowRentOracle is Ownable {
         emit VehicleRegistered(vehicleId, carType, trim);
     }
 
+    /**
+     * @notice Update pricing data for a vehicle
+     * @param vehicleId Vehicle to update
+     * @param odometer Current odometer reading
+     * @param timestamp Timestamp of data
+     */
+    function updatePricingData(
+        bytes32 vehicleId,
+        uint256 odometer,
+        uint256 timestamp
+    ) external onlyAuthorizedFeed {
+        require(vehicleData[vehicleId].metadata.isActive, "Vehicle not active");
+        require(odometer > 0, "Invalid odometer reading");
+        require(timestamp > 0, "Invalid timestamp");
+
+        PricingData memory pricing = PricingData({
+            odometer: odometer,
+            timestamp: timestamp,
+            lastUpdated: block.timestamp
+        });
+
+        vehicleData[vehicleId].pricing = pricing;
+
+        emit PricingDataUpdated(vehicleId, pricing);
+    }
+
+    /**
+     * @notice Calculate adjusted rate based on vehicle usage data
+     * @param vehicleId Vehicle to calculate rate for
+     * @param previousOdometer Previous odometer reading for distance calculation
+     * @param previousTimestamp Previous timestamp for time calculation
+     * @return adjustedRate The calculated rate per minute
+     * @return distanceFactor Distance-based adjustment
+     */
+    function calculateRate(
+        bytes32 vehicleId,
+        uint256 previousOdometer,
+        uint256 previousTimestamp
+    ) public view returns (
+        uint256 adjustedRate,
+        uint256 distanceFactor
+    ) {
+        require(vehicleData[vehicleId].metadata.isActive, "Vehicle not active");
+        
+        VehicleData storage data = vehicleData[vehicleId];
+        uint256 baseRate = baseRates[vehicleId];
+        
+        // Calculate distance factor (miles driven)
+        uint256 milesDriven = 0;
+        if (data.pricing.odometer > previousOdometer) {
+            milesDriven = data.pricing.odometer - previousOdometer;
+        }
+        distanceFactor = 10000 + (milesDriven * 100); // 1.0x + 0.01x per mile
+        
+        // Calculate final rate with distance factor
+        uint256 rate = baseRate;
+        rate = (rate * distanceFactor) / 10000;
+        
+        return (rate, distanceFactor);
+    }
+
+    /**
+     * @notice Apply usage-based rate adjustment to active rental
+     * @param rentalId Rental to adjust
+     * @param vehicleId Vehicle ID
+     * @param previousOdometer Previous odometer reading for calculation
+     * @param previousTimestamp Previous timestamp for calculation
+     */
+    function applyRateAdjustment(
+        bytes32 rentalId,
+        bytes32 vehicleId,
+        uint256 previousOdometer,
+        uint256 previousTimestamp
+    ) external onlyAuthorizedFeed {
+        require(vehicleData[vehicleId].metadata.isActive, "Vehicle not active");
+        
+        (uint256 newRate, uint256 distanceFactor) = 
+            calculateRate(vehicleId, previousOdometer, previousTimestamp);
+        
+        // Get current rental rate from escrow contract
+        FlowRentEscrow.Rental memory rental = escrowContract.getRental(rentalId);
+        uint256 currentRate = rental.currentRate;
+        
+        if (newRate != currentRate) {
+            // Apply adjustment via escrow contract
+            string memory reason = string(abi.encodePacked(
+                "Usage adjustment for vehicle: ", 
+                vehicleData[vehicleId].metadata.carType
+            ));
+            escrowContract.adjustRate(rentalId, newRate, reason);
+            
+            emit RateAdjustmentApplied(rentalId, currentRate, newRate);
+            emit RateCalculated(rentalId, newRate, distanceFactor);
+        }
+    }
+
    
+}
