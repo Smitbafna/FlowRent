@@ -138,3 +138,63 @@ contract FlowRentFactory is Ownable {
 
         return (escrowContract, oracleContract);
     }
+
+    /**
+     * @notice Get deployment details for a network
+     * @param network Network to query
+     * @return deployment Complete deployment information
+     */
+    function getDeployment(string memory network) external view returns (FlowRentDeployment memory deployment) {
+        return deployments[network];
+    }
+
+    /**
+     * @notice Get all deployed networks
+     * @return networks Array of network names
+     */
+    function getDeployedNetworks() external view returns (string[] memory networks) {
+        return deployedNetworks;
+    }
+
+    /**
+     * @notice Check if an address is a valid FlowRent contract
+     * @param contractAddress Address to check
+     * @return isValid Whether the address is a valid FlowRent contract
+     */
+    function isValidFlowRentContract(address contractAddress) external view returns (bool isValid) {
+        return isFlowRentContract[contractAddress];
+    }
+
+    /**
+     * @notice Upgrade a contract in a deployment
+     * @param network Network to upgrade
+     * @param contractType Type of contract ("escrow", "oracle", "insurance")
+     * @param newContract New contract address
+     */
+    function upgradeContract(
+        string memory network,
+        string memory contractType,
+        address newContract
+    ) external onlyOwner {
+        require(deployments[network].escrowContract != address(0), "Network not deployed");
+        require(newContract != address(0), "Invalid new contract address");
+
+        FlowRentDeployment storage deployment = deployments[network];
+        address oldContract;
+
+        if (keccak256(bytes(contractType)) == keccak256(bytes("escrow"))) {
+            oldContract = deployment.escrowContract;
+            deployment.escrowContract = newContract;
+        } else if (keccak256(bytes(contractType)) == keccak256(bytes("oracle"))) {
+            oldContract = deployment.oracleContract;
+            deployment.oracleContract = newContract;
+        } else {
+            revert("Invalid contract type");
+        }
+
+        // Update contract validity
+        isFlowRentContract[oldContract] = false;
+        isFlowRentContract[newContract] = true;
+
+        emit ContractUpgraded(network, contractType, oldContract, newContract);
+    }
