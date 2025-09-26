@@ -16,9 +16,10 @@ cp .env.example .env
 ```
 
 Set variables:
-- `NEXT_PUBLIC_SOURCE_CONTRACT`: Celo Mainnet source contract address
+- `NEXT_PUBLIC_SOURCE_CONTRACT`: Celo Alfajores testnet source contract address
+- `NEXT_PUBLIC_DEST_CONTRACT`: Arbitrum Sepolia testnet destination contract address
 - `NEXT_PUBLIC_SELF_APP_NAME` and `NEXT_PUBLIC_SELF_SCOPE`: UI labels
-- `NEXT_PUBLIC_SOURCE_EXPLORER`, `NEXT_PUBLIC_DEST_EXPLORER`: Explorer base URLs
+- `NEXT_PUBLIC_SOURCE_EXPLORER`, `NEXT_PUBLIC_DEST_EXPLORER`: Explorer base URLs (Celo Alfajores and Arbitrum Sepolia)
 - `SOURCE_RPC`, `DEST_RPC` (server-only): RPCs used by `/api/status`
 
 ## Run
@@ -32,7 +33,7 @@ npm run dev
 ## Flow
 
 - Homepage shows a QR and a Connect Wallet button (no manual address input). The connected address is used as `userId`.
-- On success, the app navigates to `/status?user=<address>` which polls recent sends (Celo) and receipts (Base).
+- On success, the app navigates to `/status?user=<address>` which polls recent sends (Celo) and receipts (Arbitrum).
 - “Copy/Open” buttons are shown only on mobile/in-app browsers.
 
 ## Customize

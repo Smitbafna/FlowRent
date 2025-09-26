@@ -9,7 +9,7 @@ import { ISelfVerificationRoot } from "@selfxyz/contracts/contracts/interfaces/I
 /**
  * @title ProofOfHumanReceiver
  * @notice Receives and processes Self Protocol verification data from Celo Mainnet via LayerZero
- * @dev This contract runs on Arbitrum One to receive verification data from Celo Mainnet
+ * @dev This contract runs on Base Mainnet to receive verification data from Celo Mainnet
  */
 contract ProofOfHumanReceiver is OApp, OAppOptionsType3 {
     // Hardcoded source: Celo Mainnet

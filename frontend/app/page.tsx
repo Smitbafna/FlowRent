@@ -69,6 +69,12 @@ export default function Home() {
         setWalletAddress(a);
         setUserId(a);
         setWalletError(null);
+        
+        // Redirect to FlowRent after 10 seconds
+        displayToast("Wallet connected! Redirecting to FlowRent ..");
+        setTimeout(() => {
+          router.push("/flowrent");
+        }, 10000);
       }
     } catch (e: any) {
       setWalletError(e?.message || "Failed to connect wallet");
@@ -91,7 +97,7 @@ export default function Home() {
         userId: userId,
         endpointType: "celo",
         userIdType: "hex",
-        userDefinedData: "Self verification result bridging to Base Mainnet",
+        userDefinedData: "Self verification result bridging to Arbitrum One",
         disclosures: {
           minimumAge: 18,
           nationality: true,

@@ -40,14 +40,14 @@ export default function StatusPage() {
     };
     run();
 
-    // Smart polling: stop if both src and dst have transactions for the current user
+   
     const shouldContinuePolling = () => {
       if (userFilter) {
         const hasUserSrc = src.some(e => e.user.toLowerCase() === userFilter);
         const hasUserDst = dst.some(e => e.user.toLowerCase() === userFilter);
         return !(hasUserSrc && hasUserDst);
       }
-      // For general view, stop if we have any transactions
+     
       return src.length === 0 && dst.length === 0;
     };
 
@@ -70,7 +70,7 @@ export default function StatusPage() {
         {/* Header */}
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Cross-chain Verification Status</h1>
-          <p className="text-gray-600">Track your identity verification messages across Celo and Base</p>
+          <p className="text-gray-600">Track your identity verification messages across Celo Alfajores and Arbitrum Sepolia testnets</p>
         </div>
 
         {/* Controls */}
@@ -136,7 +136,7 @@ export default function StatusPage() {
             <div className="bg-gradient-to-r from-green-500 to-emerald-600 p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <h2 className="text-lg font-semibold text-white">Celo Mainnet</h2>
+                  <h2 className="text-lg font-semibold text-white">Celo Alfajores</h2>
                   <p className="text-green-100 text-sm">Source Chain - Verification Sent</p>
                 </div>
                 <div className="text-right">
@@ -191,7 +191,7 @@ export default function StatusPage() {
             <div className="bg-gradient-to-r from-blue-500 to-indigo-600 p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <h2 className="text-lg font-semibold text-white">Base Mainnet</h2>
+                  <h2 className="text-lg font-semibold text-white">Arbitrum Sepolia</h2>
                   <p className="text-blue-100 text-sm">Destination Chain - Verification Received</p>
                 </div>
                 <div className="text-right">
@@ -230,7 +230,7 @@ export default function StatusPage() {
                         target="_blank"
                         rel="noreferrer"
                       >
-                        <span>View on Basescan</span>
+                        <span>View on Arbiscan</span>
                         <span>↗</span>
                       </a>
                     </div>
@@ -257,6 +257,13 @@ export default function StatusPage() {
                 </div>
               </div>
             </div>
+            {/* Custom navigation button */}
+            <button
+              onClick={() => router.push("/flowrent")}
+              className="mt-6 px-6 py-3 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-semibold text-lg shadow transition-colors"
+            >
+              Proceed to FlowRent
+            </button>
           </div>
         )}
       </div>
