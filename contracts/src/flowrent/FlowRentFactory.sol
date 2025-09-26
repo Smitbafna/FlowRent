@@ -297,5 +297,76 @@ contract FlowRentFactory is Ownable {
         isHealthy = escrowValid && oracleValid;
     }
 
-   
+    /**
+     * @notice Batch update pricing data for multiple vehicles
+     * @param network Network identifier
+     * @param vehicleIds Array of vehicle IDs
+     * @param odometers Array of odometer readings
+     * @param timestamps Array of data timestamps
+     */
+    function batchUpdatePricingData(
+        string memory network,
+        bytes32[] memory vehicleIds,
+        uint256[] memory odometers,
+        uint256[] memory timestamps
+    ) external onlyOwner {
+        require(vehicleIds.length == odometers.length, "Array length mismatch");
+        require(odometers.length == timestamps.length, "Array length mismatch");
+        
+        FlowRentDeployment memory deployment = deployments[network];
+        require(deployment.escrowContract != address(0), "Network not deployed");
+
+        FlowRentOracle oracle = FlowRentOracle(deployment.oracleContract);
+
+        // Create pricing data array
+        FlowRentOracle.PricingData[] memory pricingData = new FlowRentOracle.PricingData[](vehicleIds.length);
+        
+        // Populate pricing data array
+        for (uint256 i = 0; i < vehicleIds.length; i++) {
+            pricingData[i] = FlowRentOracle.PricingData({
+                odometer: odometers[i],
+                timestamp: timestamps[i],
+                lastUpdated: block.timestamp
+            });
+        }
+        
+        // Update pricing data in batch
+        oracle.batchUpdatePricingData(vehicleIds, pricingData);
+    }
+
+    /**
+     * Risk telemetry functions removed to simplify the contract
+     */
+
+    /**
+     * Health telemetry functions removed to simplify the contract
+     */
+
+    /**
+     * @notice Configure network for LayerZero cross-chain functionality
+     * @param network Network identifier
+     * @param layerZeroChainId LayerZero chain ID for this network
+     * @param isNativePYUSD Whether PYUSD is native on this network
+     */
+    function configureLayerZeroNetwork(
+        string memory network,
+        uint16 layerZeroChainId,
+        bool isNativePYUSD
+    ) external onlyOwner {
+        require(bytes(network).length > 0, "Network name required");
+        require(layerZeroChainId > 0, "Invalid LayerZero chain ID");
+        require(deployments[network].escrowContract != address(0), "Network not deployed");
+        
+        // Update deployment with LayerZero information
+        deployments[network].layerZeroChainId = layerZeroChainId;
+        deployments[network].isNativePYUSD = isNativePYUSD;
+        
+        // Update mappings
+        layerZeroChainIdToNetwork[layerZeroChainId] = network;
+        networkToLayerZeroChainId[network] = layerZeroChainId;
+        
+        emit CrossChainNetworkConfigured(network, layerZeroChainId, isNativePYUSD);
+    }
+    
+  
 }
