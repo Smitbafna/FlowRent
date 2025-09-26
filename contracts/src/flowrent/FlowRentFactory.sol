@@ -368,5 +368,273 @@ contract FlowRentFactory is Ownable {
         emit CrossChainNetworkConfigured(network, layerZeroChainId, isNativePYUSD);
     }
     
-  
+    /**
+     * @notice Deploy PYUSD OFT wrapper for a network that doesn't have native PYUSD
+     * @param network Network identifier
+     * @param pyusdAddress PYUSD address on the network (if it exists)
+     */
+    function deployPYUSDOFT(
+        string memory network,
+        address pyusdAddress
+    ) external onlyOwner returns (address oftAddress) {
+        require(bytes(network).length > 0, "Network name required");
+        require(deployments[network].escrowContract != address(0), "Network not deployed");
+        require(deployments[network].layerZeroChainId > 0, "Network not configured for LayerZero");
+        require(deployments[network].pyusdOFTWrapper == address(0), "OFT already deployed");
+        
+        // Deploy OFT wrapper
+        FlowRentPYUSDOFT oft = new FlowRentPYUSDOFT(
+            layerZeroEndpoint,
+            pyusdAddress,
+            oftImplementation,
+            owner()
+        );
+        
+        oftAddress = address(oft);
+        
+        // Update deployment
+        deployments[network].pyusdOFTWrapper = oftAddress;
+        
+        emit PYUSDOFTDeployed(deployments[network].layerZeroChainId, oftAddress);
+        
+        return oftAddress;
+    }
+    
+    /**
+     * @notice Initiate cross-chain deployment of FlowRent ecosystem
+     * @param sourceNetwork Source network identifier
+     * @param targetNetwork Target network identifier
+     * @param targetChainId LayerZero chain ID for target network
+     * @param pyusdToken PYUSD token address on target chain
+     * @param verificationContract ProofOfHumanity contract address on target chain
+     * @param version Version identifier for deployment
+     * @param gasLimit Gas limit for cross-chain transaction
+     */
+    // Struct to hold cross-chain deployment data
+    struct CrossChainDeployData {
+        string sourceNetwork;
+        string targetNetwork;
+        uint16 targetChainId;
+        address pyusdToken;
+        address verificationContract;
+        address sablierLockupContract;
+        string version;
+        uint256 gasLimit;
+    }
+    
+    function deployFlowRentCrossChain(
+        string memory sourceNetwork,
+        string memory targetNetwork,
+        uint16 targetChainId,
+        address pyusdToken,
+        address verificationContract,
+        address sablierLockupContract,
+        string memory version,
+        uint256 gasLimit
+    ) external payable onlyOwner {
+        CrossChainDeployData memory data = CrossChainDeployData({
+            sourceNetwork: sourceNetwork,
+            targetNetwork: targetNetwork,
+            targetChainId: targetChainId,
+            pyusdToken: pyusdToken,
+            verificationContract: verificationContract,
+            sablierLockupContract: sablierLockupContract,
+            version: version,
+            gasLimit: gasLimit
+        });
+        
+        _deployFlowRentCrossChain(data);
+    }
+    
+    function _deployFlowRentCrossChain(CrossChainDeployData memory data) internal {
+        require(bytes(data.sourceNetwork).length > 0, "Source network name required");
+        require(bytes(data.targetNetwork).length > 0, "Target network name required");
+        require(deployments[data.sourceNetwork].escrowContract != address(0), "Source network not deployed");
+        require(deployments[data.targetNetwork].escrowContract == address(0), "Target network already deployed");
+        require(deployments[data.sourceNetwork].layerZeroChainId > 0, "Source network not configured for LayerZero");
+        require(data.targetChainId > 0, "Invalid target chain ID");
+        require(data.pyusdToken != address(0), "Invalid PYUSD token address");
+        require(data.verificationContract != address(0), "Invalid verification contract address");
+        
+        // Encode deployment parameters
+        bytes memory payload = abi.encode(
+            data.targetNetwork,
+            data.pyusdToken,
+            data.verificationContract,
+            data.sablierLockupContract,
+            data.version
+        );
+        
+        // Process cross-chain deployment
+        _processCrossChainDeployment(data, payload);
+    }
+    
+    function _processCrossChainDeployment(
+        CrossChainDeployData memory data,
+        bytes memory payload
+    ) internal {
+        // Get LayerZero endpoint
+        ILayerZeroEndpoint endpoint = ILayerZeroEndpoint(layerZeroEndpoint);
+        
+        // Calculate fees
+        (uint256 nativeFee, ) = endpoint.estimateFees(
+            data.targetChainId,
+            address(this),
+            payload,
+            false,
+            bytes("")
+        );
+        require(msg.value >= nativeFee, "Insufficient fee");
+        
+        // Send cross-chain message
+        endpoint.send{value: msg.value}(
+            data.targetChainId,
+            abi.encodePacked(address(this)),
+            payload,
+            payable(msg.sender),
+            address(0),
+            bytes("")
+        );
+        
+        emit CrossChainDeploymentInitiated(data.sourceNetwork, data.targetNetwork, data.targetChainId);
+    }
+    
+    /**
+     * @notice Struct to hold LayerZero received deployment data
+     * @dev Used to avoid stack too deep errors
+     */
+    struct LzReceiveData {
+        uint16 srcChainId;
+        bytes srcAddress;
+        uint64 nonce;
+        bytes payload;
+        address srcAddr;
+    }
+
+    /**
+     * @notice Process cross-chain message from LayerZero
+     * @param srcChainId Source chain ID
+     * @param srcAddress Source address
+     * @param nonce Message nonce
+     * @param payload Message payload
+     */
+    function lzReceive(
+        uint16 srcChainId,
+        bytes memory srcAddress,
+        uint64 nonce,
+        bytes memory payload
+    ) external {
+        require(msg.sender == layerZeroEndpoint, "Only LayerZero endpoint can call");
+        require(srcAddress.length == 20, "Invalid source address");
+        
+        // Extract source address
+        address srcAddr;
+        assembly {
+            srcAddr := mload(add(srcAddress, 20))
+        }
+        
+        // Create data struct and process the message
+        LzReceiveData memory data = LzReceiveData({
+            srcChainId: srcChainId,
+            srcAddress: srcAddress,
+            nonce: nonce,
+            payload: payload,
+            srcAddr: srcAddr
+        });
+        
+        _processLzMessage(data);
+    }
+    
+    /**
+     * @notice Process received LayerZero message
+     * @param data The LayerZero message data
+     */
+    function _processLzMessage(LzReceiveData memory data) internal {
+        // Check if source address is a valid FlowRent factory
+        // (In a real deployment, you would check if this is a trusted factory address)
+        
+        // Decode deployment parameters
+        (string memory network, 
+         address pyusdToken, 
+         address verificationContract,
+         address sablierLockupContract,
+         string memory version) = abi.decode(data.payload, (string, address, address, address, string));
+        
+        // Deploy FlowRent on this chain
+        this.deployFlowRent(network, pyusdToken, verificationContract, sablierLockupContract, version);
+        
+        emit CrossChainDeploymentReceived(data.srcChainId, data.payload);
+    }
+    
+    /**
+     * @notice Struct for cross-chain rental parameters
+     * @dev Used to avoid stack too deep errors in initiateRentalCrossChain
+     */
+    struct CrossChainRentalParams {
+        string sourceNetwork;
+        string targetNetwork;
+        uint256 vehicleId;
+        address renter;
+        uint256 amount;
+    }
+    
+    /**
+     * @notice Initiate cross-chain rental
+     * @param sourceNetwork Source network identifier
+     * @param targetNetwork Target network identifier
+     * @param vehicleId Vehicle ID
+     * @param renter Renter address
+     * @param amount Amount of PYUSD to send
+     * @param gasLimit Gas limit for cross-chain transaction (unused but kept for API compatibility)
+     */
+    function initiateRentalCrossChain(
+        string memory sourceNetwork,
+        string memory targetNetwork,
+        uint256 vehicleId,
+        address renter,
+        uint256 amount,
+        uint256 gasLimit
+    ) external payable {
+        // Create a params struct to avoid stack too deep errors
+        CrossChainRentalParams memory params = CrossChainRentalParams({
+            sourceNetwork: sourceNetwork,
+            targetNetwork: targetNetwork,
+            vehicleId: vehicleId,
+            renter: renter,
+            amount: amount
+        });
+        
+        // Process the cross-chain rental
+        _processCrossChainRental(params);
+    }
+    
+    /**
+     * @notice Process cross-chain rental
+     * @param params Cross-chain rental parameters
+     */
+    function _processCrossChainRental(CrossChainRentalParams memory params) internal {
+        require(bytes(params.sourceNetwork).length > 0, "Source network name required");
+        require(bytes(params.targetNetwork).length > 0, "Target network name required");
+        require(deployments[params.sourceNetwork].escrowContract != address(0), "Source network not deployed");
+        require(deployments[params.targetNetwork].escrowContract != address(0), "Target network not deployed");
+        
+        uint16 targetChainId = networkToLayerZeroChainId[params.targetNetwork];
+        require(targetChainId > 0, "Target network not configured for LayerZero");
+        
+        // Transfer PYUSD to OFT wrapper first (approval required before calling this function)
+        address oftWrapper = deployments[params.sourceNetwork].pyusdOFTWrapper;
+        require(oftWrapper != address(0), "OFT wrapper not deployed");
+        
+        // Send tokens cross-chain
+        FlowRentPYUSDOFT(payable(oftWrapper)).sendTokens{value: msg.value}(
+            targetChainId,
+            abi.encodePacked(deployments[params.targetNetwork].escrowContract),
+            params.amount,
+            payable(msg.sender),
+            params.renter,
+            params.vehicleId
+        );
+        
+        emit CrossChainRentalInitiated(targetChainId, params.vehicleId, params.renter);
+    }
 }
