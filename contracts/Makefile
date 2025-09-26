@@ -1,5 +1,5 @@
 # Self Protocol LayerZero Cross-Chain Makefile
-# Simplified deployment and management for Celo Mainnet -> Base Mainnet
+# Simplified deployment and management for Celo Mainnet -> Arbitrum One
 
 .PHONY: help install deploy deploy-contracts setup-peers fund-source verify-setup verify-contracts clean set-scope show-scope withdraw-source
 
@@ -95,8 +95,8 @@ _check-deployments:
 	@if [ ! -f .env ]; then echo "❌ .env file not found."; exit 1; fi
 	@source .env && \
 	CELO_BROADCAST="broadcast/DeployProofOfHumanOApp.s.sol/42220/run-latest.json" && \
-	BASE_BROADCAST="broadcast/DeployProofOfHumanReceiver.s.sol/8453/run-latest.json" && \
-	if [ ! -f "$$CELO_BROADCAST" ] || [ ! -f "$$BASE_BROADCAST" ]; then \
+	ARBITRUM_BROADCAST="broadcast/DeployProofOfHumanReceiver.s.sol/42161/run-latest.json" && \
+	if [ ! -f "$$CELO_BROADCAST" ] || [ ! -f "$$ARBITRUM_BROADCAST" ]; then \
 		echo "❌ Deployment artifacts not found. Run 'make deploy-contracts' first."; \
 		exit 1; \
 	fi
@@ -104,24 +104,24 @@ _check-deployments:
 _setup-peers-internal:
 	@source .env && \
 	SOURCE_ADDR=$$(jq -r '.transactions[] | select(.contractName == "ProofOfHumanOApp") | .contractAddress' broadcast/DeployProofOfHumanOApp.s.sol/42220/run-latest.json | head -1) && \
-	DEST_ADDR=$$(jq -r '.transactions[] | select(.contractName == "ProofOfHumanReceiver") | .contractAddress' broadcast/DeployProofOfHumanReceiver.s.sol/8453/run-latest.json | head -1) && \
+	DEST_ADDR=$$(jq -r '.transactions[] | select(.contractName == "ProofOfHumanReceiver") | .contractAddress' broadcast/DeployProofOfHumanReceiver.s.sol/42161/run-latest.json | head -1) && \
 	echo "Setting peers: $$SOURCE_ADDR <-> $$DEST_ADDR" && \
 	SOURCE_EID=$${SOURCE_EID:-30125} && \
-	DESTINATION_EID=$${DESTINATION_EID:-30184} && \
+	DESTINATION_EID=$${DESTINATION_EID:-30110} && \
 	echo "Setting destination as peer on Celo Mainnet..." && \
 	cast send $$SOURCE_ADDR "setPeer(uint32,bytes32)" $$DESTINATION_EID $$(cast --to-bytes32 $$DEST_ADDR) --rpc-url https://forno.celo.org --private-key $$PRIVATE_KEY && \
 	echo "Setting Celo Mainnet as peer on destination..." && \
-	cast send $$DEST_ADDR "setPeer(uint32,bytes32)" $$SOURCE_EID $$(cast --to-bytes32 $$SOURCE_ADDR) --rpc-url https://mainnet.base.org --private-key $$PRIVATE_KEY && \
+	cast send $$DEST_ADDR "setPeer(uint32,bytes32)" $$SOURCE_EID $$(cast --to-bytes32 $$SOURCE_ADDR) --rpc-url https://arb1.arbitrum.io/rpc --private-key $$PRIVATE_KEY && \
 	echo "✅ Peers configured successfully!"
 
 _retry-peers-internal:
 	@source .env && \
 	SOURCE_ADDR=$$(jq -r '.transactions[] | select(.contractName == "ProofOfHumanOApp") | .contractAddress' broadcast/DeployProofOfHumanOApp.s.sol/42220/run-latest.json | head -1) && \
-	DEST_ADDR=$$(jq -r '.transactions[] | select(.contractName == "ProofOfHumanReceiver") | .contractAddress' broadcast/DeployProofOfHumanReceiver.s.sol/8453/run-latest.json | head -1) && \
+	DEST_ADDR=$$(jq -r '.transactions[] | select(.contractName == "ProofOfHumanReceiver") | .contractAddress' broadcast/DeployProofOfHumanReceiver.s.sol/42161/run-latest.json | head -1) && \
 	echo "🔄 Retrying peer setup with enhanced handling..." && \
 	echo "Contracts: $$SOURCE_ADDR (Celo) <-> $$DEST_ADDR (Base)" && \
 	SOURCE_EID=$${SOURCE_EID:-30125} && \
-	DESTINATION_EID=$${DESTINATION_EID:-30184} && \
+	DESTINATION_EID=$${DESTINATION_EID:-30110} && \
 	echo "Step 1/2: Setting Base as peer on Celo (with retry)..." && \
 	(cast send $$SOURCE_ADDR "setPeer(uint32,bytes32)" $$DESTINATION_EID $$(cast --to-bytes32 $$DEST_ADDR) --rpc-url https://forno.celo.org --private-key $$PRIVATE_KEY || \
 	 (echo "⚠️ First attempt failed, retrying in 10s..." && sleep 10 && \
@@ -152,7 +152,7 @@ _retry-peers-internal:
 _handle-deploy-failure:
 	@echo
 	@echo "⚠️  Deployment encountered an issue. Attempting intelligent recovery..."
-	@if [ -f "broadcast/DeployProofOfHumanOApp.s.sol/42220/run-latest.json" ] && [ -f "broadcast/DeployProofOfHumanReceiver.s.sol/8453/run-latest.json" ]; then \
+	@if [ -f "broadcast/DeployProofOfHumanOApp.s.sol/42220/run-latest.json" ] && [ -f "broadcast/DeployProofOfHumanReceiver.s.sol/42161/run-latest.json" ]; then \
 		echo "✅ Contracts were deployed successfully. Attempting peer setup recovery..."; \
 		echo "🔄 Running enhanced peer retry logic..."; \
 		if $(MAKE) _retry-peers-internal; then \
@@ -167,7 +167,7 @@ _handle-deploy-failure:
 			echo "2. Or see: DEPLOYMENT_TROUBLESHOOTING.md"; \
 			exit 1; \
 		fi; \
-	elif [ -f "broadcast/DeployProofOfHumanOApp.s.sol/42220/run-latest.json" ] || [ -f "broadcast/DeployProofOfHumanReceiver.s.sol/8453/run-latest.json" ]; then \
+	elif [ -f "broadcast/DeployProofOfHumanOApp.s.sol/42220/run-latest.json" ] || [ -f "broadcast/DeployProofOfHumanReceiver.s.sol/42161/run-latest.json" ]; then \
 		echo "⚠️  Partial deployment detected. Some contracts were deployed but others failed."; \
 		echo "🔧 Manual recovery required. Check deployment artifacts and re-run deploy."; \
 		exit 1; \
@@ -184,7 +184,7 @@ _update-frontend-config:
 	@echo "🎨 Updating frontend configuration..."
 	@source .env && \
 	SOURCE_ADDR=$$(jq -r '.transactions[] | select(.contractName == "ProofOfHumanOApp") | .contractAddress' broadcast/DeployProofOfHumanOApp.s.sol/42220/run-latest.json | head -1) && \
-	DEST_ADDR=$$(jq -r '.transactions[] | select(.contractName == "ProofOfHumanReceiver") | .contractAddress' broadcast/DeployProofOfHumanReceiver.s.sol/8453/run-latest.json | head -1) && \
+	DEST_ADDR=$$(jq -r '.transactions[] | select(.contractName == "ProofOfHumanReceiver") | .contractAddress' broadcast/DeployProofOfHumanReceiver.s.sol/42161/run-latest.json | head -1) && \
 	FRONTEND_ENV_FILE="../app/.env" && \
 	if [ -f "$$FRONTEND_ENV_FILE" ]; then \
 		sed -i.bak "s|NEXT_PUBLIC_SOURCE_CONTRACT=.*|NEXT_PUBLIC_SOURCE_CONTRACT=$$SOURCE_ADDR|g" "$$FRONTEND_ENV_FILE" 2>/dev/null || { echo "NEXT_PUBLIC_SOURCE_CONTRACT=$$SOURCE_ADDR" >> "$$FRONTEND_ENV_FILE"; } && \
@@ -205,10 +205,10 @@ _fund-source-internal:
 _verify-peers:
 	@source .env && \
 	SOURCE_ADDR=$$(jq -r '.transactions[] | select(.contractName == "ProofOfHumanOApp") | .contractAddress' broadcast/DeployProofOfHumanOApp.s.sol/42220/run-latest.json | head -1) && \
-	DEST_ADDR=$$(jq -r '.transactions[] | select(.contractName == "ProofOfHumanReceiver") | .contractAddress' broadcast/DeployProofOfHumanReceiver.s.sol/8453/run-latest.json | head -1) && \
+	DEST_ADDR=$$(jq -r '.transactions[] | select(.contractName == "ProofOfHumanReceiver") | .contractAddress' broadcast/DeployProofOfHumanReceiver.s.sol/42161/run-latest.json | head -1) && \
 	echo "Verifying peer configuration..." && \
 	SOURCE_EID=$${SOURCE_EID:-30125} && \
-	DESTINATION_EID=$${DESTINATION_EID:-30184} && \
+	DESTINATION_EID=$${DESTINATION_EID:-30110} && \
 	SOURCE_PEER=$$(cast call $$SOURCE_ADDR "peers(uint32)" $$DESTINATION_EID --rpc-url https://forno.celo.org) && \
 	DEST_PEER=$$(cast call $$DEST_ADDR "peers(uint32)" $$SOURCE_EID --rpc-url https://mainnet.base.org) && \
 	EXPECTED_DEST=$$(cast --to-bytes32 $$DEST_ADDR) && \

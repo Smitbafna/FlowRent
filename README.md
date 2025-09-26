@@ -1,6 +1,6 @@
-# Self Protocol + LayerZero (Celo → Base)
+# Self Protocol + LayerZero (Celo → Arbitrum)
 
-Build a cross-chain verification flow with Self Protocol on Celo Mainnet and forward results to Base Mainnet via LayerZero.
+Build a cross-chain verification flow with Self Protocol on Celo Mainnet and forward results to Arbitrum One via LayerZero.
 
 ## 📁 Project Structure
 ```
@@ -12,7 +12,7 @@ self-layerzero-example/
 └── contracts/                # Contracts + scripts (Foundry)
     ├── src/
     │   ├── ProofOfHumanOApp.sol      # Celo sender (Self + LZ OApp, has withdraw())
-    │   └── ProofOfHumanReceiver.sol  # Base receiver
+    │   └── ProofOfHumanReceiver.sol  # Arbitrum receiver
     ├── script/
     │   └── deploy-oapp-cross-chain.sh
     ├── Makefile              # make deploy, set-scope, fund-source, withdraw-source...
@@ -23,7 +23,7 @@ self-layerzero-example/
 - Node.js 20
 - Foundry toolchain
 - Self App (iOS/Android)
-- Wallet funded on Celo (deploy + funding) and Base (deploy)
+- Wallet funded on Celo (deploy + funding) and Arbitrum (deploy)
 - Note: Celo Alfajores is not supported by LZ v2
 
 ## 🚀 Quick Start
@@ -52,7 +52,7 @@ On the homepage:
 ## 🧠 How It Works
 - Verification is initiated from the Self mobile app and executed inside a TEE server (trusted execution environment) that submits the proof to your on‑chain endpoint on Celo.
 - Your endpoint is the OApp’s `verifySelfProof` (inherited from `SelfVerificationRoot`). It calls the Self Hub on Celo to validate the proof and your policy (e.g., minimum age, exclude country) and normalizes the result for retrieval.
-- After success, your overridden `onVerificationSuccess` hook runs and calls `_lzSend` with a minimal payload. LayerZero V2 delivers it to Base (EID 30184), where the receiver persists the verification.
+- After success, your overridden `onVerificationSuccess` hook runs and calls `_lzSend` with a minimal payload. LayerZero V2 delivers it to Arbitrum (EID 30110), where the receiver persists the verification.
 
 ```mermaid
 sequenceDiagram
@@ -62,7 +62,7 @@ sequenceDiagram
     participant OApp as Celo OApp.verifySelfProof
     participant Hub as Self Hub (Celo)
     participant LZ as LayerZero Endpoint V2
-    participant Base as Base Receiver Contract
+    participant Arbitrum as Arbitrum Receiver Contract
 
     User->>TEE: Scan QR / deeplink
     TEE->>OApp: submit proof to verifySelfProof(userId, proof)
@@ -72,9 +72,9 @@ sequenceDiagram
     Hub-->>OApp: verification ok + attributes
     OApp->>OApp: normalize result for storage
     OApp->>OApp: onVerificationSuccess (override)
-    OApp->>LZ: _lzSend(dst=Base EID 30184, gas=200k)
-    LZ-->>Base: deliver message
-    Base->>Base: _lzReceive() persist verification
+    OApp->>LZ: _lzSend(dst=Arbitrum EID 30110, gas=200k)
+    LZ-->>Arbitrum: deliver message
+    Arbitrum->>Arbitrum: _lzReceive() persist verification
 ```
 
 ##
@@ -87,8 +87,8 @@ sequenceDiagram
 ## 🔗 Network
 - Celo Mainnet (EID 30125)
   - RPC: https://forno.celo.org, Explorer: https://celoscan.io
-- Base Mainnet (EID 30184)
-  - RPC: https://mainnet.base.org, Explorer: https://basescan.org
+- Arbitrum One (EID 30110)
+  - RPC: https://arb1.arbitrum.io/rpc, Explorer: https://arbiscan.io
 
 ## 📚 References
 - Self Docs: https://docs.self.xyz

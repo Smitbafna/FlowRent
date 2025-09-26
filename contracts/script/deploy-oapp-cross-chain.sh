@@ -103,12 +103,12 @@ if [ "$CELO_BAL_WEI" -lt "$MIN_CELO_WEI" ]; then
   exit 1
 fi
 if [ "$BASE_BAL_WEI" -lt "$MIN_BASE_WEI" ]; then
-  print_error "Insufficient ETH on Base for deployment (need >= 0.0001 ETH). Fund $DEPLOYER on Base Mainnet."
+  print_error "Insufficient ETH on Arbitrum for deployment (need >= 0.0001 ETH). Fund $DEPLOYER on Arbitrum One."
   exit 1
 fi
 
 # Hardcode destination EID if not provided
-DESTINATION_EID=${DESTINATION_EID:-30184}
+DESTINATION_EID=${DESTINATION_EID:-30110}
 
 # Network-specific configurations
 setup_network_config() {
@@ -127,13 +127,13 @@ setup_network_config() {
             print_error "Celo Alfajores testnet is not supported by LayerZero V2. Use celo-mainnet instead."
             exit 1
             ;;
-        "base-mainnet")
-            # Hardcoded Base Mainnet LayerZero Endpoint V2 address
+        "arbitrum-one")
+            # Hardcoded Arbitrum One LayerZero Endpoint V2 address
             LAYERZERO_ENDPOINT_ADDRESS="0x1a44076050125825900e736c501f859c50fE728c"
-            RPC_URL="https://mainnet.base.org"
-            NETWORK_NAME="base-mainnet"
-            CHAIN_ID="8453"
-            BLOCK_EXPLORER_URL="https://basescan.org"
+            RPC_URL="https://arb1.arbitrum.io/rpc"
+            NETWORK_NAME="arbitrum-one"
+            CHAIN_ID="42161"
+            BLOCK_EXPLORER_URL="https://arbiscan.io"
             ;;
         *)
             print_error "Unsupported network: $network"
