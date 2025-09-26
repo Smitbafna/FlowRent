@@ -198,3 +198,104 @@ contract FlowRentFactory is Ownable {
 
         emit ContractUpgraded(network, contractType, oldContract, newContract);
     }
+
+    /**
+     * @notice Batch setup for a new deployment with vehicle registration
+     * @param network Network identifier  
+     * @param vehicleIds Array of initial vehicle IDs
+     * @param carTypes Array of vehicle types
+     * @param trims Array of vehicle trim levels
+     * @param baseRates Array of base rates for vehicles
+     */
+    function batchSetupDeployment(
+        string memory network,
+        bytes32[] memory vehicleIds,
+        string[] memory carTypes,
+        string[] memory trims,
+        uint256[] memory baseRates
+    ) external onlyOwner {
+        require(vehicleIds.length == carTypes.length, "Array length mismatch");
+        require(carTypes.length == trims.length, "Array length mismatch");
+        require(trims.length == baseRates.length, "Array length mismatch");
+        
+        FlowRentDeployment memory deployment = deployments[network];
+        require(deployment.escrowContract != address(0), "Network not deployed");
+
+        FlowRentOracle oracle = FlowRentOracle(deployment.oracleContract);
+
+        // Register initial vehicles
+        for (uint256 i = 0; i < vehicleIds.length; i++) {
+            oracle.registerVehicle(
+                vehicleIds[i],
+                carTypes[i],
+                trims[i],
+                baseRates[i]
+            );
+        }
+    }
+
+    /**
+     * @notice Emergency pause for a network deployment
+     * @param network Network to pause
+     */
+    function pauseNetwork(string memory network) external onlyOwner {
+        FlowRentDeployment memory deployment = deployments[network];
+        require(deployment.escrowContract != address(0), "Network not deployed");
+
+        // Note: This would require pause functionality in the contracts
+        // For now, we mark contracts as invalid
+        isFlowRentContract[deployment.escrowContract] = false;
+        isFlowRentContract[deployment.oracleContract] = false;
+    }
+
+    /**
+     * @notice Resume a paused network
+     * @param network Network to resume
+     */
+    function resumeNetwork(string memory network) external onlyOwner {
+        FlowRentDeployment memory deployment = deployments[network];
+        require(deployment.escrowContract != address(0), "Network not deployed");
+
+        // Restore contract validity
+        isFlowRentContract[deployment.escrowContract] = true;
+        isFlowRentContract[deployment.oracleContract] = true;
+    }
+
+    /**
+     * @notice Get deployment statistics
+     * @return totalNetworks Number of networks deployed
+     * @return totalContracts Total contracts deployed
+     * @return networks Array of all network names
+     */
+    function getDeploymentStats() external view returns (
+        uint256 totalNetworks,
+        uint256 totalContracts,
+        string[] memory networks
+    ) {
+        totalNetworks = deployedNetworks.length;
+        totalContracts = totalNetworks * 2; // Each deployment has 2 contracts
+        networks = deployedNetworks;
+    }
+
+    /**
+     * @notice Check deployment health for a network
+     * @param network Network to check
+     * @return isHealthy Whether all contracts are deployed and valid
+     * @return escrowValid Escrow contract validity
+     * @return oracleValid Oracle contract validity
+     */
+    function checkDeploymentHealth(string memory network) external view returns (
+        bool isHealthy,
+        bool escrowValid,
+        bool oracleValid
+    ) {
+        FlowRentDeployment memory deployment = deployments[network];
+        
+        escrowValid = deployment.escrowContract != address(0) && isFlowRentContract[deployment.escrowContract];
+        oracleValid = deployment.oracleContract != address(0) && isFlowRentContract[deployment.oracleContract];
+        
+        isHealthy = escrowValid && oracleValid;
+    }
+
+   
+}
