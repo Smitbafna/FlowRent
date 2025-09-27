@@ -81,4 +81,39 @@ contract FlowRentRegistry is Ownable {
         emit DeploymentRegistered(network, escrowContract, oracleContract);
     }
 
+    /**
+     * @notice Get deployment details for a network
+     * @param network Network to query
+     * @return deployment Complete deployment information
+     */
+    function getDeployment(string memory network) external view returns (FlowRentDeployment memory deployment) {
+        return deployments[network];
+    }
+
+    /**
+     * @notice Get all deployed networks
+     * @return networks Array of network names
+     */
+    function getDeployedNetworks() external view returns (string[] memory networks) {
+        return deployedNetworks;
+    }
+
+    /**
+     * @notice Check if an address is a valid FlowRent contract
+     * @param contractAddress Address to check
+     * @return isValid Whether the address is a valid FlowRent contract
+     */
+    function isValidFlowRentContract(address contractAddress) external view returns (bool isValid) {
+        return isFlowRentContract[contractAddress];
+    }
+    
+    /**
+     * @notice Set the validity of a contract
+     * @param contractAddress Contract address to update
+     * @param isValid New validity status
+     */
+    function setContractValidity(address contractAddress, bool isValid) public onlyOwner {
+        isFlowRentContract[contractAddress] = isValid;
+        emit ContractValidityChanged(contractAddress, isValid);
+    }
 }
