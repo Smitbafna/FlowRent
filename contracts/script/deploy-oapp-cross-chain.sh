@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Deploy Cross-Chain Proof of Human OApp Script
-# Deploys ProofOfHumanOApp on Celo and ProofOfHumanReceiver on Base Mainnet
+# Deploys ProofOfHumanOApp on Celo and ProofOfHumanReceiver on Arbitrum One
 
 # Don't exit immediately on error for peer setup - we want to continue with frontend config
 # set -e  # Exit on error
@@ -9,7 +9,23 @@
 # Color codes for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
+YELLOW='\033[1;33m' Quick Start
+# 1) Install
+cd contracts && npm install && forge install
+cd ../app && npm install
+
+# 2) Configure contracts/.env (edit PRIVATE_KEY, VERIFICATION_CONFIG_ID, SCOPE_SEED)
+cd ../contracts && cp .env.example .env
+
+# 3) Deploy (deploys + verifies + sets scope/peers + writes app/.env)
+make deploy
+
+# 4) Fund source (required for auto-forward; recommend ≥ 0.5 CELO)
+make fund-source AMOUNT=0.5
+
+# 5) Run frontend
+cd ../app && npm run dev   # http://localhost:3000
+
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
@@ -71,10 +87,10 @@ for var in "${REQUIRED_VARS[@]}"; do
     fi
 done
 
-# Set defaults - Celo Mainnet -> Base Mainnet
+# Set defaults - Celo Alfajores -> Arbitrum Sepolia
 PLACEHOLDER_SCOPE=${PLACEHOLDER_SCOPE:-1}
-SOURCE_NETWORK="celo-mainnet"
-DESTINATION_NETWORK="base-mainnet"
+SOURCE_NETWORK="celo-alfajores"
+DESTINATION_NETWORK="arbitrum-sepolia"
 
 # Configuration flags
 AUTO_SETUP_PEERS=${AUTO_SETUP_PEERS:-true}
@@ -85,55 +101,55 @@ VERIFY_CONTRACTS=${VERIFY_CONTRACTS:-false}
 print_success "Environment variables validated"
 
 # Preflight: check deployer balances on both chains to avoid mid-script failures
-print_info "Checking deployer balances on Celo and Base..."
+print_info "Checking deployer balances on Celo Alfajores and Arbitrum Sepolia..."
 DEPLOYER=$(cast wallet address --private-key $PRIVATE_KEY)
-CELO_BAL_WEI=$(cast balance $DEPLOYER --rpc-url https://forno.celo.org)
-BASE_BAL_WEI=$(cast balance $DEPLOYER --rpc-url https://mainnet.base.org)
+CELO_BAL_WEI=$(cast balance $DEPLOYER --rpc-url https://alfajores-forno.celo-testnet.org)
+ARB_BAL_WEI=$(cast balance $DEPLOYER --rpc-url https://sepolia-rollup.arbitrum.io/rpc)
 CELO_BAL=$(cast --from-wei $CELO_BAL_WEI)
-BASE_BAL=$(cast --from-wei $BASE_BAL_WEI)
+ARB_BAL=$(cast --from-wei $ARB_BAL_WEI)
 echo "Deployer: $DEPLOYER"
-echo "Celo balance: $CELO_BAL CELO"
-echo "Base balance: $BASE_BAL ETH"
+echo "Celo Alfajores balance: $CELO_BAL CELO"
+echo "Arbitrum Sepolia balance: $ARB_BAL ETH"
 
-# Require at least 0.20 CELO and 0.0001 ETH (rough guidance; adjust as needed)
-MIN_CELO_WEI=200000000000000000      # 0.20 CELO
-MIN_BASE_WEI=100000000000000         # 0.0001 ETH
+# Require at least 0.10 CELO and 0.0001 ETH for testnet (lower requirements)
+MIN_CELO_WEI=100000000000000000      # 0.10 CELO
+MIN_ARB_WEI=100000000000000          # 0.0001 ETH
 if [ "$CELO_BAL_WEI" -lt "$MIN_CELO_WEI" ]; then
-  print_error "Insufficient CELO for deployment (need >= 0.20 CELO). Fund $DEPLOYER on Celo Mainnet."
+  print_error "Insufficient CELO for deployment (need >= 0.10 CELO). Fund $DEPLOYER on Celo Alfajores testnet."
   exit 1
 fi
-if [ "$BASE_BAL_WEI" -lt "$MIN_BASE_WEI" ]; then
-  print_error "Insufficient ETH on Arbitrum for deployment (need >= 0.0001 ETH). Fund $DEPLOYER on Arbitrum One."
+if [ "$ARB_BAL_WEI" -lt "$MIN_ARB_WEI" ]; then
+  print_error "Insufficient ETH on Arbitrum for deployment (need >= 0.0001 ETH). Fund $DEPLOYER on Arbitrum Sepolia testnet."
   exit 1
 fi
 
-# Hardcode destination EID if not provided
-DESTINATION_EID=${DESTINATION_EID:-30110}
+# Hardcode destination EID if not provided (Arbitrum Sepolia testnet)
+DESTINATION_EID=${DESTINATION_EID:-40231}
 
 # Network-specific configurations
 setup_network_config() {
     local network=$1
     
     case "$network" in
-        "celo-mainnet")
-            IDENTITY_VERIFICATION_HUB_ADDRESS=${IDENTITY_VERIFICATION_HUB_ADDRESS:-"0xe57F4773bd9c9d8b6Cd70431117d353298B9f5BF"}
-            LAYERZERO_ENDPOINT_ADDRESS="0x1a44076050125825900e736c501f859c50fE728c"
-            RPC_URL="https://forno.celo.org"
-            NETWORK_NAME="celo-mainnet"
-            CHAIN_ID="42220"
-            BLOCK_EXPLORER_URL="https://celoscan.io"
-            ;;
         "celo-alfajores")
-            print_error "Celo Alfajores testnet is not supported by LayerZero V2. Use celo-mainnet instead."
+            IDENTITY_VERIFICATION_HUB_ADDRESS=${IDENTITY_VERIFICATION_HUB_ADDRESS:-"0xe57F4773bd9c9d8b6Cd70431117d353298B9f5BF"}
+            LAYERZERO_ENDPOINT_ADDRESS="0x6EDCE65403992e310A62460808c4b910D972f10f"
+            RPC_URL="https://alfajores-forno.celo-testnet.org"
+            NETWORK_NAME="celo-alfajores"
+            CHAIN_ID="44787"
+            BLOCK_EXPLORER_URL="https://alfajores.celoscan.io"
+            ;;
+        "celo-mainnet")
+            print_error "Using mainnet is not recommended for development. Use celo-alfajores testnet instead."
             exit 1
             ;;
-        "arbitrum-one")
-            # Hardcoded Arbitrum One LayerZero Endpoint V2 address
-            LAYERZERO_ENDPOINT_ADDRESS="0x1a44076050125825900e736c501f859c50fE728c"
-            RPC_URL="https://arb1.arbitrum.io/rpc"
-            NETWORK_NAME="arbitrum-one"
-            CHAIN_ID="42161"
-            BLOCK_EXPLORER_URL="https://arbiscan.io"
+        "arbitrum-sepolia")
+            # Arbitrum Sepolia LayerZero Endpoint V2 address
+            LAYERZERO_ENDPOINT_ADDRESS="0x6EDCE65403992e310A62460808c4b910D972f10f"
+            RPC_URL="https://sepolia-rollup.arbitrum.io/rpc"
+            NETWORK_NAME="arbitrum-sepolia"
+            CHAIN_ID="421614"
+            BLOCK_EXPLORER_URL="https://sepolia.arbiscan.io"
             ;;
         *)
             print_error "Unsupported network: $network"
@@ -198,7 +214,7 @@ else
     exit 1
 fi
 
-# Deploy on destination chain (Base)
+# Deploy on destination chain (Arbitrum)
 print_info "Deploying ProofOfHumanReceiver on destination chain: $DESTINATION_NETWORK"
 setup_network_config "$DESTINATION_NETWORK"
 
@@ -308,7 +324,7 @@ if [ "$AUTO_SETUP_PEERS" = "true" ]; then
 
     # Set destination as peer on Celo Mainnet with retry
     setup_network_config "$SOURCE_NETWORK"
-    print_info "Step 1/2: Setting Base as peer on Celo contract..."
+    print_info "Step 1/2: Setting Arbitrum as peer on Celo contract..."
 
     CELO_PEER_CMD="cast send $SOURCE_CONTRACT_ADDRESS 'setPeer(uint32,bytes32)' ${DESTINATION_EID} $DEST_BYTES32 --rpc-url $RPC_URL --private-key \$PRIVATE_KEY --confirmations 1"
 

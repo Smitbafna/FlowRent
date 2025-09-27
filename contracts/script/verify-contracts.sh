@@ -42,20 +42,20 @@ if [ $# -eq 2 ]; then
     DEST_CONTRACT_ADDRESS=$2
     print_info "Using provided contract addresses:"
     print_info "Source (Celo): $SOURCE_CONTRACT_ADDRESS"
-    print_info "Destination (Arbitrum One): $DEST_CONTRACT_ADDRESS"
+    print_info "Destination (Base Mainnet): $DEST_CONTRACT_ADDRESS"
 else
     # Try to extract from deployment artifacts
     CELO_BROADCAST="broadcast/DeployProofOfHumanOApp.s.sol/42220/run-latest.json"
-    ARBITRUM_BROADCAST="broadcast/DeployProofOfHumanReceiver.s.sol/42161/run-latest.json"
+    BASE_BROADCAST="broadcast/DeployProofOfHumanReceiver.s.sol/8453/run-latest.json"
     
-    if [[ -f "$CELO_BROADCAST" && -f "$ARBITRUM_BROADCAST" ]]; then
-        SOURCE_CONTRACT_ADDRESS=$(jq -r '.transactions[] | select(.contractName == "ProofOfHumanOApp") | .contractAddress' "$CELO_BROADCAST" |DEST_CONTRACT_ADDRESS=$(jq -r '.transactions[] | select(.contractName == "ProofOfHumanReceiver") | .contractAddress' "$ARBITRUM_BROADCAST" | head -1)
-        DEST_CONTRACT_ADDRESS=$(jq -r '.transactions[] | select(.contractName == "ProofOfHumanReceiver") | .contractAddress' "$ARBITRUM_BROADCAST" | head -1)| select(.contractName == "ProofOfHumanReceiver") |DEST_CONTRACT_ADDRESS=$(jq -r '.transactions[] | select(.contractName == "ProofOfHumanReceiver") | .contractAddress' "$ARBITRUM_BROADCAST" | head -1)|DEST_CONTRACT_ADDRESS=$(jq -r '.transactions[] | select(.contractName == "ProofOfHumanReceiver") | .contractAddress' "$ARBITRUM_BROADCAST" | head -1)
+    if [[ -f "$CELO_BROADCAST" && -f "$BASE_BROADCAST" ]]; then
+        SOURCE_CONTRACT_ADDRESS=$(jq -r '.transactions[] | select(.contractName == "ProofOfHumanOApp") | .contractAddress' "$CELO_BROADCAST" | head -1)
+        DEST_CONTRACT_ADDRESS=$(jq -r '.transactions[] | select(.contractName == "ProofOfHumanReceiver") | .contractAddress' "$BASE_BROADCAST" | head -1)
         
         if [[ -n "$SOURCE_CONTRACT_ADDRESS" && "$SOURCE_CONTRACT_ADDRESS" != "null" && -n "$DEST_CONTRACT_ADDRESS" && "$DEST_CONTRACT_ADDRESS" != "null" ]]; then
             print_info "Found contract addresses from deployment artifacts:"
             print_info "Source (Celo): $SOURCE_CONTRACT_ADDRESS"
-            print_info "Destination (Arbitrum One): $DEST_CONTRACT_ADDRESS"
+            print_info "Destination (Base Mainnet): $DEST_CONTRACT_ADDRESS"
         else
             print_error "Could not extract contract addresses from deployment artifacts."
             print_error "Usage: ./verify-contracts.sh <celo_contract_address> <base_mainnet_contract_address>"
