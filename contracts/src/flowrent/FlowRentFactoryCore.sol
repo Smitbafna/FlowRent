@@ -107,6 +107,18 @@ contract FlowRentFactoryCore is Ownable {
         );
     }
 
-   
-    // All implementation moved to registry and deploy helper
+    /**
+     * @notice Get all deployed networks (pass-through to registry)
+     */
+    function getDeployedNetworks() external view returns (string[] memory) {
+        return registry.getDeployedNetworks();
+    }
+
+    /**
+     * @notice Check if an address is a valid FlowRent contract (pass-through to registry)
+     */
+    function isValidFlowRentContract(address contractAddress) external view returns (bool) {
+        return registry.isValidFlowRentContract(contractAddress);
+    }
+
 }
