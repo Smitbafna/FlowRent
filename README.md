@@ -66,5 +66,3 @@ This cross-border rental experience demonstrates how FlowRent eliminates traditi
 
 
 
-
-
