@@ -1,6 +1,8 @@
 "use client";
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import ConnectWalletButton from './ConnectWalletButton';
+import { useWallet } from '../context/WalletProvider';
 
 const Header = () => {
   const router = useRouter();
@@ -8,39 +10,25 @@ const Header = () => {
   const [showWalletTooltip, setShowWalletTooltip] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   
-  // Mock data - in real app these would come from context/state
+  const { isConnected, account } = useWallet();
+  
+  // Verification status - this would come from contract in real implementation
   const verificationStatus = {
-    isVerified: true,
-    method: 'Passport', // 'Passport', 'Orb', or 'Device'
+    isVerified: isConnected,
+    method: 'Self Protocol', // Using Self Protocol for verification
     level: 'Verified Human'
   };
   
-  const walletAddress = '0x1e50cCa4CB425A373Cf2e6e7baD72B06a139312c';
-  const truncatedAddress = `${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}`;
+  const walletAddress = account || '';
+  const truncatedAddress = walletAddress ? `${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}` : '';
 
   const getVerificationIcon = (method) => {
-    switch (method) {
-      case 'Passport':
-        return (
-          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-            <path d="M4 4a2 2 0 00-2 2v1h16V6a2 2 0 00-2-2H4zM2 8v6a2 2 0 002 2h12a2 2 0 002-2V8H2zm8 3a1 1 0 011-1h3a1 1 0 110 2h-3a1 1 0 01-1-1z"/>
-          </svg>
-        );
-      case 'Orb':
-        return (
-          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-8.293l-3-3a1 1 0 00-1.414 0l-3 3a1 1 0 001.414 1.414L9 9.414V13a1 1 0 102 0V9.414l1.293 1.293a1 1 0 001.414-1.414z" clipRule="evenodd"/>
-          </svg>
-        );
-      case 'Device':
-        return (
-          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-            <path fillRule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 011 1v8a1 1 0 01-1 1H4a1 1 0 01-1-1V4zm1 2v6h12V6H4z" clipRule="evenodd"/>
-          </svg>
-        );
-      default:
-        return null;
-    }
+    // Self Protocol icon
+    return (
+      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+        <path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+      </svg>
+    );
   };
 
   const copyAddress = async () => {
@@ -63,69 +51,49 @@ const Header = () => {
 
         {/* Desktop Navigation */}
         <nav className="hidden md:flex items-center space-x-8">
-         
+          <a href="#features" className="text-slate-100 hover:text-teal-400 transition-colors">Key Features</a>
+          <a href="#how-it-works" className="text-slate-100 hover:text-teal-400 transition-colors">How It Works</a>
+          <a href="#benefits" className="text-slate-100 hover:text-teal-400 transition-colors">Benefits</a>
         </nav>
 
-        {/* World ID & Wallet Section */}
+        {/* Self ID & Wallet Section */}
         <div className="hidden md:flex items-center space-x-4">
-          {/* World ID Verification Badge */}
-          <div 
-            className="relative flex items-center space-x-2 bg-emerald-500/10 border border-emerald-500/30 px-3 py-2 rounded-lg"
-            onMouseEnter={() => setShowTooltip(true)}
-            onMouseLeave={() => setShowTooltip(false)}
-          >
-            <div className="text-emerald-400">
-              {getVerificationIcon(verificationStatus.method)}
-            </div>
-            <span className="text-emerald-400 text-xs font-medium">
-              Verified via {verificationStatus.method}
-            </span>
-            
-            {/* Tooltip */}
-            {showTooltip && (
-              <div className="absolute top-full mt-2 left-1/2 transform -translate-x-1/2 bg-slate-800 text-white text-xs px-3 py-2 rounded-lg shadow-lg border border-slate-600 whitespace-nowrap z-10">
-                Verified human via World ID
-                <div className="absolute -top-1 left-1/2 transform -translate-x-1/2 w-2 h-2 bg-slate-800 rotate-45 border-l border-t border-slate-600"></div>
+          {/* Self ID Verification Badge */}
+          {isConnected && (
+                      <div 
+                className="relative flex items-center space-x-2 bg-emerald-500/10 border border-emerald-500/30 px-3 py-2 rounded-lg"
+                onMouseEnter={() => setShowTooltip(true)}
+                onMouseLeave={() => setShowTooltip(false)}
+              >
+                <div className="text-emerald-400">
+                  {getVerificationIcon(verificationStatus.method)}
+                </div>
+                <span className="text-emerald-400 text-xs font-medium">
+                  Verified via {verificationStatus.method}
+                </span>
+                
+                {/* Tooltip */}
+                {showTooltip && (
+                  <div className="absolute top-full mt-2 left-1/2 transform -translate-x-1/2 bg-slate-800 text-slate-100 text-xs px-3 py-2 rounded-lg shadow-lg border border-slate-600 whitespace-nowrap z-10">
+                    Verified human via Self Protocol
+                    <div className="absolute -top-1 left-1/2 transform -translate-x-1/2 w-2 h-2 bg-slate-800 rotate-45 border-l border-t border-slate-600"></div>
+                  </div>
+                )}
               </div>
-            )}
-          </div>
+          )}
 
-          {/* Connected Wallet */}
-          <div 
-            className="relative flex items-center space-x-2 bg-slate-700/50 border border-slate-600 px-3 py-2 rounded-lg cursor-pointer hover:bg-slate-700/70 transition-colors"
-            onClick={copyAddress}
-            onMouseEnter={() => setShowWalletTooltip(true)}
-            onMouseLeave={() => setShowWalletTooltip(false)}
-          >
-            <div className="w-2 h-2 bg-green-400 rounded-full"></div>
-            <span className="text-slate-300 text-xs font-mono">
-              {truncatedAddress}
-            </span>
-            <svg className="w-3 h-3 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-            </svg>
+          {/* Wallet Connection Button */}
+          <ConnectWalletButton variant="secondary" size="sm" className="z-50" />
+          
+          {/* Connected Wallet - Only show if connected */}
+         
 
-            {/* Wallet Tooltip */}
-            {showWalletTooltip && (
-              <div className="absolute top-full mt-2 left-1/2 transform -translate-x-1/2 bg-slate-800 text-white text-xs px-3 py-2 rounded-lg shadow-lg border border-slate-600 whitespace-nowrap z-10">
-                Click to copy full address
-                <div className="absolute -top-1 left-1/2 transform -translate-x-1/2 w-2 h-2 bg-slate-800 rotate-45 border-l border-t border-slate-600"></div>
-              </div>
-            )}
-          </div>
-
-          {/* Get Started Button */}
-          <button 
-            onClick={() => router.push('/')}
-            className="bg-teal-500 hover:bg-teal-600 px-6 py-2 rounded-lg transition-colors duration-200 text-sm font-semibold text-white"
-          >
-            Get Started
-          </button>
+        
         </div>
 
         {/* Mobile Menu Button */}
         <button 
-          className="md:hidden p-2 text-white"
+          className="md:hidden p-2 text-slate-100"
           onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
         >
           <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -140,7 +108,7 @@ const Header = () => {
           <div className="px-6 py-4 space-y-4">
             {/* Mobile Verification & Wallet */}
             <div className="flex flex-col space-y-3">
-              {/* World ID Badge */}
+              {/* Self Protocol Verification Badge */}
               <div className="flex items-center space-x-2 bg-emerald-500/10 border border-emerald-500/30 px-3 py-2 rounded-lg w-fit">
                 <div className="text-emerald-400">
                   {getVerificationIcon(verificationStatus.method)}
@@ -168,18 +136,25 @@ const Header = () => {
             {/* Mobile Navigation Links */}
             <div className="space-y-2 pt-2">
               <a 
+                href="#features" 
+                className="block py-2 text-slate-100 hover:text-teal-400 transition-colors"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Key Features
+              </a>
+              <a 
                 href="#how-it-works" 
-                className="block py-2 text-white hover:text-teal-400 transition-colors"
+                className="block py-2 text-slate-100 hover:text-teal-400 transition-colors"
                 onClick={() => setMobileMenuOpen(false)}
               >
                 How It Works
               </a>
               <a 
-                href="#why-flowrent" 
-                className="block py-2 text-white hover:text-teal-400 transition-colors"
+                href="#benefits" 
+                className="block py-2 text-slate-100 hover:text-teal-400 transition-colors"
                 onClick={() => setMobileMenuOpen(false)}
               >
-                About
+                Benefits
               </a>
               <button 
                 onClick={() => {

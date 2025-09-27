@@ -16,7 +16,7 @@ const StepCard: React.FC<StepCardProps> = ({ icon, title, description, step }) =
     <div className="w-20 h-20 bg-teal-500 rounded-full flex items-center justify-center mx-auto mb-6 group-hover:bg-teal-400 transition-colors duration-200 shadow-lg">
       {icon}
     </div>
-    <h3 className="text-2xl font-semibold mb-4">{title}</h3>
+    <h3 className="text-2xl font-semibold mb-4 text-slate-100">{title}</h3>
     <p className="text-slate-300 text-lg leading-relaxed">{description}</p>
   </div>
 );
@@ -29,26 +29,26 @@ const HowItWorks = () => {
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
         </svg>
       ),
-      title: "Verify",
-      description: "Secure identity verification with Self Protocol for trusted rentals and enhanced privacy"
+      title: "Pre-Trip Verification",
+      description: "Complete one-time passport-based KYC with Self Protocol that works across all supported chains"
     },
     {
       icon: (
         <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-4m-5 0H3m2 0V9a2 2 0 012-2h4a2 2 0 012 2v4" />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
         </svg>
       ),
-      title: "Rent",
-      description: "Browse and rent anything with real-time PYUSD micropayments and transparent pricing"
+      title: "Arrive & Locate",
+      description: "Arrive at your destination, locate available vehicles, and access them with your verified credentials"
     },
     {
       icon: (
         <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.828 14.828a4 4 0 01-5.656 0M9 10h1a3 3 0 010 6h-1m1-6V9a3 3 0 013-3h2M9 10V9a3 3 0 013-3h2m-3 12h2a3 3 0 003-3v-1" />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
         </svg>
       ),
-      title: "Enjoy",
-      description: "Access your rental instantly with secure, transparent transactions and full control"
+      title: "Pay-as-you-go",
+      description: "Enjoy the freedom of seamless pay-per-minute vehicle use with PYUSD streaming payments on Arbitrum"
     }
   ];
 
@@ -56,9 +56,9 @@ const HowItWorks = () => {
     <section id="how-it-works" className="bg-slate-800 py-20 lg:py-28">
       <div className="max-w-7xl mx-auto px-6">
         <div className="text-center mb-16">
-          <h2 className="text-4xl lg:text-5xl font-bold mb-4">How It Works</h2>
+          <h2 className="text-4xl lg:text-5xl font-bold mb-4 text-slate-100">How It Works</h2>
           <p className="text-xl text-slate-300 max-w-3xl mx-auto">
-            Get started with FlowRent in three simple steps
+            Rent vehicles globally with these three simple steps
           </p>
         </div>
         

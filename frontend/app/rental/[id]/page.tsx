@@ -3,16 +3,28 @@
 import React, { useState, useEffect } from 'react';
 import Header from '../../components/Header';
 import { ethers } from 'ethers';
-import FlowRentEscrowABI from '../../abis/FlowRentEscrow.json';
+import { 
+  connectWallet, 
+  switchToSourceNetwork,
+  switchToDestinationNetwork, 
+  getProofOfHumanOApp, 
+  getProofOfHumanReceiver,
+  getFlowRentEscrow,
+  getFlowRentPYUSDSablier,
+  getPYUSDToken,
+  CONTRACT_ADDRESSES
+} from '../../utils/contracts';
+import { FlowRentEscrowABI } from '../../abis';
 
 interface Props {
   params: { id: string };
 }
 
-interface Asset {
+interface Vehicle {
   id: string;
-  type: 'scooter' | 'bike' | 'desk';
+  type: 'car' | 'motorcycle' | 'truck' | 'scooter';
   deposit: number;
+  hourlyRate: number;
   estimatedDuration: string;
   distance?: string;
   route?: string;
@@ -22,11 +34,12 @@ interface Asset {
 }
 
 
-const mockAssets: Asset[] = [
+const mockVehicles: Vehicle[] = [
   {
     id: '1',
-    type: 'scooter',
+    type: 'car',
     deposit: 25,
+    hourlyRate: 5,
     estimatedDuration: '1-2 hours',
     distance: '6km',
     route: 'Mumbai, India → Pune, India',
@@ -36,8 +49,9 @@ const mockAssets: Asset[] = [
   },
   {
     id: '2',
-    type: 'bike',
+    type: 'motorcycle',
     deposit: 20,
+    hourlyRate: 3,
     estimatedDuration: '2-4 hours',
     distance: '12km',
     route: 'Delhi, India → Gurgaon, India',
@@ -45,28 +59,51 @@ const mockAssets: Asset[] = [
     available: true,
     rating: 4.6
   },
- 
+  {
+    id: '3',
+    type: 'truck',
+    deposit: 40,
+    hourlyRate: 8,
+    estimatedDuration: '3-5 hours',
+    distance: '25km',
+    route: 'Bangalore, India → Mysore, India',
+    location: 'Bangalore, India',
+    available: true,
+    rating: 4.3
+  },
+  {
+    id: '4',
+    type: 'scooter',
+    deposit: 15,
+    hourlyRate: 2,
+    estimatedDuration: '1-2 hours',
+    distance: '4km',
+    route: 'Chennai, India → Adyar, India',
+    location: 'Chennai, India',
+    available: true,
+    rating: 4.9
+  }
 ];
 
-export default function AssetPage({ params }: Props) {
+export default function VehiclePage({ params }: Props) {
   const { id } = params;
-  const [asset, setAsset] = useState<Asset | null>(null);
+  const [vehicle, setVehicle] = useState<Vehicle | null>(null);
   const [walletAddress, setWalletAddress] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
   const [txHash, setTxHash] = useState<string>('');
   const [rentalDetails, setRentalDetails] = useState<any>(null);
 
   useEffect(() => {
-    // Find asset by ID
-    const foundAsset = mockAssets.find(a => a.id === id);
-    setAsset(foundAsset || null);
+    // Find vehicle by ID
+    const foundVehicle = mockVehicles.find(v => v.id === id);
+    setVehicle(foundVehicle || null);
 
     // Check wallet connection
     checkWalletConnection();
     
-    // If we have an asset ID and wallet is connected, check if it's currently rented
-    if (foundAsset && walletAddress) {
-      getRentalInfo(foundAsset.id)
+    // If we have a vehicle ID and wallet is connected, check if it's currently rented
+    if (foundVehicle && walletAddress) {
+      getRentalInfo(foundVehicle.id)
         .then(rentalInfo => {
           if (rentalInfo && rentalInfo.active) {
             console.log("Current rental info:", rentalInfo);
@@ -107,35 +144,28 @@ export default function AssetPage({ params }: Props) {
     }
   };
 
-  // Function to generate rental ID from asset ID (matches contract's logic)
-  const generateRentalId = (assetId: string) => {
+  // Function to generate rental ID from vehicle ID (matches contract's logic)
+  const generateRentalId = (vehicleId: string) => {
     // In the actual contract, the rental ID is a hash of multiple parameters
-    // For simplicity, we'll create a bytes32 hash of the asset ID
+    // For simplicity, we'll create a bytes32 hash of the vehicle ID
     // This will need to match how rental IDs are generated in the contract
-    return ethers.keccak256(ethers.toUtf8Bytes(`rental-${assetId}`));
+    return ethers.keccak256(ethers.toUtf8Bytes(`rental-${vehicleId}`));
   };
 
-  // Function to get rental information for an asset
-  const getRentalInfo = async (assetId: string) => {
+  // Function to get rental information for a vehicle
+  const getRentalInfo = async (vehicleId: string) => {
     if (!walletAddress) return null;
     
     try {
       const provider = new ethers.BrowserProvider((window as any).ethereum);
       const signer = await provider.getSigner();
       
-      // Fix the address checksum by using ethers.getAddress
-      let flowRentEscrowAddress;
-      try {
-        // This will convert to a proper checksum address
-        flowRentEscrowAddress = ethers.getAddress("0x82D8f4a2Ef077f2Ec32B18c3AF122d4E54A3e9eB");
-      } catch {
-        // If getAddress fails, use a hardcoded string for simulation
-        flowRentEscrowAddress = "0x82D8f4a2Ef077f2Ec32B18c3AF122d4E54A3e9eB";
-      }
-      const flowRentContract = new ethers.Contract(flowRentEscrowAddress, FlowRentEscrowABI, signer);
+      // Create contract instance with properly checksummed address
+      const flowRentAddress = ethers.getAddress(CONTRACT_ADDRESSES.FLOW_RENT_ESCROW);
+      const flowRentContract = new ethers.Contract(flowRentAddress, FlowRentEscrowABI, signer);
       
-      // Generate rental ID for the given asset ID
-      const rentalId = generateRentalId(assetId);
+      // Generate rental ID for the given vehicle ID
+      const rentalId = generateRentalId(vehicleId);
       console.log("Looking up rental with ID:", rentalId);
       
       let isActive = false;
@@ -167,7 +197,7 @@ export default function AssetPage({ params }: Props) {
         const mockRental = {
           renter: walletAddress,
           owner: "0x70997970C51812dc3A010C7d01b50e0d17dc79C8", // Mock owner address
-          assetId: BigInt(assetId),
+          assetId: BigInt(vehicleId),
           depositAmount: ethers.parseUnits("25", 6), // $25 PYUSD
           insuranceHeld: ethers.parseUnits("2.5", 6), // 10% of deposit for insurance
           baseRate: ethers.parseUnits("0.1", 6), // 0.1 PYUSD per hour base rate
@@ -185,36 +215,12 @@ export default function AssetPage({ params }: Props) {
       }
     } catch (error) {
       console.error('Error in getRentalInfo:', error);
-      
-      // For testing/demo, we might want to show a random mock rental
-      // Uncommenting this would let us test the rental display UI
-      /*
-      const mockRental = {
-        renter: walletAddress,
-        owner: "0x70997970C51812dc3A010C7d01b50e0d17dc79C8",
-        assetId: BigInt(assetId),
-        depositAmount: ethers.parseUnits("25", 6),
-        insuranceHeld: ethers.parseUnits("2.5", 6),
-        baseRate: ethers.parseUnits("0.1", 6),
-        currentRate: ethers.parseUnits("0.1", 6),
-        startTime: BigInt(Math.floor(Date.now() / 1000) - 3600),
-        endTime: BigInt(Math.floor(Date.now() / 1000) + 3600),
-        totalStreamed: ethers.parseUnits("0.1", 6),
-        lastStreamTime: BigInt(Math.floor(Date.now() / 1000) - 600),
-        status: 0,
-        geofenceHash: "0x0000000000000000000000000000000000000000000000000000000000000000",
-        metadataURI: "",
-        active: true
-      };
-      return Math.random() > 0.7 ? mockRental : null;
-      */
-      
       return null;
     }
   };
 
   const startRental = async () => {
-    if (!asset || !walletAddress) {
+    if (!vehicle || !walletAddress) {
       alert('Please connect your wallet first');
       return;
     }
@@ -222,21 +228,10 @@ export default function AssetPage({ params }: Props) {
     setIsLoading(true);
     
     try {
-      console.log('Starting rental for asset:', asset);
+      console.log('Starting rental for vehicle:', vehicle);
       console.log('User wallet address:', walletAddress);
       
-      // FlowRent contract details on Arbitrum
-      // Fix the address checksum by using ethers.getAddress
-      let flowRentEscrowAddress;
-      try {
-        // This will convert to a proper checksum address
-        flowRentEscrowAddress = ethers.getAddress("0x82D8f4a2Ef077f2Ec32B18c3AF122d4E54A3e9eB");
-      } catch {
-        // If getAddress fails, use a hardcoded string for simulation
-        flowRentEscrowAddress = "0x82D8f4a2Ef077f2Ec32B18c3AF122d4E54A3e9eB";
-      }
-      
-      // Connect to Arbitrum network
+      // Connect to network
       const provider = new ethers.BrowserProvider((window as any).ethereum);
       const signer = await provider.getSigner();
       const signerAddress = await signer.getAddress();
@@ -244,155 +239,132 @@ export default function AssetPage({ params }: Props) {
       console.log('Connected to network:', (await provider.getNetwork()).name);
       console.log('Using signer address:', signerAddress);
       
-      // Create a contract instance with the ABI and let it handle the address format
-      // We'll just bypass address validation checks later when needed
-      const flowRentContract = new ethers.Contract(flowRentEscrowAddress, FlowRentEscrowABI, signer);
+      // Use the contract helper from contracts.ts
+      // Make sure address is properly checksummed
+      const flowRentAddress = ethers.getAddress(CONTRACT_ADDRESSES.FLOW_RENT_ESCROW);
+      // Create contract instance with properly checksummed address
+      const flowRentContract = new ethers.Contract(flowRentAddress, FlowRentEscrowABI, signer);
       
-      // Get PYUSD token address from the contract
-      const pyusdTokenAddress = await flowRentContract.pyusdToken();
+      // Get PYUSD token address from the contract and ensure proper checksum
+      const rawPyusdAddress = await flowRentContract.pyusdToken();
+      const pyusdTokenAddress = ethers.getAddress(rawPyusdAddress);
       console.log('PYUSD Token Address (from contract):', pyusdTokenAddress);
       
-      // PYUSD token ABI
+      // Create PYUSD contract instance with properly checksummed address
       const pyusdABI = [
         "function approve(address spender, uint256 amount) external returns (bool)",
         "function allowance(address owner, address spender) external view returns (uint256)",
         "function balanceOf(address account) external view returns (uint256)"
       ];
+      const pyusdContract = new ethers.Contract(pyusdTokenAddress, pyusdABI, signer);
 
-      console.log('FlowRent Escrow Address:', flowRentEscrowAddress);
+      console.log('FlowRent Escrow Address:', flowRentAddress);
       console.log('PYUSD Token Address:', pyusdTokenAddress);
-      console.log('Asset ID:', asset.id);
-      console.log('Deposit Amount:', asset.deposit);
+      console.log('Vehicle ID:', vehicle.id);
+      console.log('Deposit Amount:', vehicle.deposit);
 
       // Calculate rental duration based on estimated time
       // Extract the higher bound from the time range (e.g., "1-2 hours" -> 2 hours)
       const timePattern = /(\d+)-(\d+)\s+hours/;
-      const timeMatch = asset.estimatedDuration.match(timePattern);
+      const timeMatch = vehicle.estimatedDuration.match(timePattern);
       const rentalHours = timeMatch ? parseInt(timeMatch[2]) : 1;
       const rentalDuration = rentalHours * 60 * 60; // Convert to seconds
       
       console.log('Rental Duration (seconds):', rentalDuration);
 
       // 1. First check PYUSD balance
-      const pyusdContract = new ethers.Contract(pyusdTokenAddress, pyusdABI, signer);
       const balance = await pyusdContract.balanceOf(signerAddress);
-      const depositWei = ethers.parseUnits(asset.deposit.toString(), 6); // PYUSD has 6 decimals
+      const depositWei = ethers.parseUnits(vehicle.deposit.toString(), 6); // PYUSD has 6 decimals
       
       console.log('PYUSD Balance:', ethers.formatUnits(balance, 6));
       console.log('Required Deposit:', ethers.formatUnits(depositWei, 6));
       
       if (balance < depositWei) {
-        throw new Error(`Insufficient PYUSD balance. You have ${ethers.formatUnits(balance, 6)} PYUSD but need ${asset.deposit} PYUSD`);
+        throw new Error(`Insufficient PYUSD balance. You have ${ethers.formatUnits(balance, 6)} PYUSD but need ${vehicle.deposit} PYUSD`);
       }
 
       // 2. Check & set allowance for the FlowRent contract to spend PYUSD
-      const currentAllowance = await pyusdContract.allowance(signerAddress, flowRentEscrowAddress);
+      // Make sure we're using checksummed addresses for the allowance check
+      const checksummedSignerAddress = ethers.getAddress(signerAddress);
+      const currentAllowance = await pyusdContract.allowance(checksummedSignerAddress, flowRentAddress);
       console.log('Current PYUSD allowance:', ethers.formatUnits(currentAllowance, 6));
       
       if (currentAllowance < depositWei) {
         console.log('Approving PYUSD transfer...');
-        const approveTx = await pyusdContract.approve(flowRentEscrowAddress, depositWei);
+        const approveTx = await pyusdContract.approve(flowRentAddress, depositWei);
         console.log('Approval transaction sent:', approveTx.hash);
         await approveTx.wait();
         console.log('PYUSD transfer approved');
       }
       
       // 3. Call startRental function with correct parameters
-      // Based on the ABI: startRental(assetId, depositAmount, expectedDuration, geofenceProof)
-      
-      // Create an empty proof (this would normally come from your geolocation system)
-      const emptyGeofenceProof = "0x"; 
       console.log('Calling startRental with params:', {
-        assetId: parseInt(asset.id),
+        assetId: parseInt(vehicle.id),
         depositAmount: depositWei.toString(),
-        expectedDuration: rentalDuration,
-        geofenceProof: emptyGeofenceProof
+        expectedDuration: rentalDuration
       });
       
-      // Make the actual contract call with the fixed address
-      console.log("Using corrected address:", flowRentEscrowAddress);
-      
-      // Variable to store the transaction hash
-      let transactionHash = "";
-      let receipt = null;
-      
+      // Make the actual contract call
+      let transaction;
       try {
-        // Attempt actual contract call with proper checksum address
-        const transaction = await flowRentContract.startRental(
-          parseInt(asset.id),
+        console.log('Using FlowRent contract at address:', flowRentAddress);
+        
+        // Double check input values
+        console.log('Checking input parameters:');
+        console.log('  Vehicle ID:', parseInt(vehicle.id));
+        console.log('  Deposit Wei:', depositWei.toString());
+        console.log('  Rental Duration:', rentalDuration);
+        
+        // Attempt actual contract call with proper error handling
+        transaction = await flowRentContract.startRental(
+          parseInt(vehicle.id),
           depositWei,
           rentalDuration,
-          emptyGeofenceProof,
           { gasLimit: 500000 }
         );
         
         console.log('Transaction sent:', transaction);
         console.log('Transaction hash:', transaction.hash);
-        transactionHash = transaction.hash;
-        setTxHash(transactionHash);
+        setTxHash(transaction.hash);
         
         // Wait for confirmation
         console.log('Waiting for transaction confirmation...');
-        receipt = await transaction.wait();
+        const receipt = await transaction.wait();
         console.log('Transaction confirmed:', receipt);
-      } catch (error) {
+      } catch (error: any) {
         console.error("Error with contract call:", error);
         
-        // If the contract call fails, simulate the transaction for demo purposes
-        const fakeTxHash = "0x" + Array.from({length: 64}, () => Math.floor(Math.random() * 16).toString(16)).join('');
-        console.log('Falling back to simulation with hash:', fakeTxHash);
-        transactionHash = fakeTxHash;
-        setTxHash(fakeTxHash);
-        
-        console.log(`Contract interaction failed, but we'll use mock data. Error: ${(error as any).message}`);
+        // More detailed error reporting
+        if (error.code === 'INVALID_ARGUMENT') {
+          console.error('Invalid argument error details:', {
+            message: error.message,
+            argument: error.argument,
+            value: error.value
+          });
+          throw new Error(`Contract call failed: ${error.message}. Please check that all addresses are valid.`);
+        } else {
+          throw error;
+        }
       }
       
       // Wait a bit for blockchain state to update
       await new Promise(resolve => setTimeout(resolve, 2000));
       
-      // Create mock rental details that match the contract structure
-      // This will be used if we can't get the actual data
-      const mockRental = {
-        renter: walletAddress,
-        owner: "0x70997970C51812dc3A010C7d01b50e0d17dc79C8", // Mock owner address
-        assetId: BigInt(asset.id),
-        depositAmount: depositWei,
-        insuranceHeld: depositWei / BigInt(10), // 10% of deposit for insurance
-        baseRate: ethers.parseUnits("0.1", 6), // 0.1 PYUSD per hour base rate
-        currentRate: ethers.parseUnits("0.1", 6),
-        startTime: BigInt(Math.floor(Date.now() / 1000)),
-        endTime: BigInt(Math.floor(Date.now() / 1000) + rentalDuration),
-        totalStreamed: BigInt(0),
-        lastStreamTime: BigInt(Math.floor(Date.now() / 1000)),
-        status: 0, // 0 = Active
-        geofenceHash: "0x0000000000000000000000000000000000000000000000000000000000000000",
-        metadataURI: "",
-        active: true
-      };
-      
-      // Fetch updated rental details after successful transaction or use mock data
-      // Use the rental ID format from the contract
-      const rentalId = generateRentalId(asset.id);
+      // Fetch updated rental details after successful transaction
+      const rentalId = generateRentalId(vehicle.id);
       try {
         const rental = await flowRentContract.getRental(rentalId);
         if (rental) {
           rental.active = true; // Mark as active for UI
           setRentalDetails(rental);
           console.log("Updated rental details:", rental);
-        } else {
-          // Use mock data if contract call succeeded but returned empty/null data
-          setRentalDetails(mockRental);
-          console.log("Using mock rental details:", mockRental);
         }
       } catch (error) {
         console.error("Error fetching updated rental details:", error);
-        // Use mock data if contract call failed
-        setRentalDetails(mockRental);
-        console.log("Using mock rental details due to error:", mockRental);
+        throw error;
       }
       
-      // Always show success message regardless of actual success/failure
-      console.log(`Rental process completed. Transaction: ${transactionHash}`);
+      console.log(`Rental process completed. Transaction: ${transaction.hash}`);
       
     } catch (error) {
       console.error('Error in rental process:', error);
@@ -401,38 +373,13 @@ export default function AssetPage({ params }: Props) {
         code: (error as any).code,
         data: (error as any).data
       });
-      
-      // Don't show error alert, just log it
-      // Instead create fake transaction data for UI
-      const fakeTxHash = "0x" + Array.from({length: 64}, () => Math.floor(Math.random() * 16).toString(16)).join('');
-      setTxHash(fakeTxHash);
-      
-      // Create mock rental data
-      const mockRental = {
-        renter: walletAddress,
-        owner: "0x70997970C51812dc3A010C7d01b50e0d17dc79C8", // Mock owner address
-        assetId: BigInt(asset.id),
-        depositAmount: ethers.parseUnits(asset.deposit.toString(), 6),
-        insuranceHeld: ethers.parseUnits((asset.deposit / 10).toString(), 6), // 10% of deposit for insurance
-        baseRate: ethers.parseUnits("0.1", 6), // 0.1 PYUSD per hour base rate
-        currentRate: ethers.parseUnits("0.1", 6),
-        startTime: BigInt(Math.floor(Date.now() / 1000)),
-        endTime: BigInt(Math.floor(Date.now() / 1000) + 3600), // 1 hour from now
-        totalStreamed: BigInt(0),
-        lastStreamTime: BigInt(Math.floor(Date.now() / 1000)),
-        status: 0, // 0 = Active
-        geofenceHash: "0x0000000000000000000000000000000000000000000000000000000000000000",
-        metadataURI: "",
-        active: true
-      };
-      
-      setRentalDetails(mockRental);
+      alert(`Failed to start rental: ${(error as any).message}`);
     } finally {
       setIsLoading(false);
     }
   };
 
-  if (!asset) {
+  if (!vehicle) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
         <Header />
@@ -443,7 +390,7 @@ export default function AssetPage({ params }: Props) {
               <div className="h-4 bg-slate-700 rounded w-2/3 mx-auto"></div>
               <div className="h-32 bg-slate-700/50 rounded-lg mt-6"></div>
             </div>
-            <p className="text-slate-400 mt-4">Loading asset details...</p>
+            <p className="text-slate-400 mt-4">Loading vehicle details...</p>
           </div>
         </main>
       </div>
@@ -455,7 +402,7 @@ export default function AssetPage({ params }: Props) {
       <Header />
       <main className="container mx-auto px-4 py-12">
         <div className="bg-slate-800/50 rounded-xl p-8 border border-slate-700 max-w-3xl mx-auto">
-          <h1 className="text-2xl font-bold text-white mb-4">Asset Details — {asset.type.toUpperCase()}</h1>
+          <h1 className="text-2xl font-bold text-white mb-4">Vehicle Details — {vehicle.type.toUpperCase()}</h1>
           
           {txHash && (
             <div className="bg-green-500/20 border border-green-500/30 rounded-lg p-4 mb-6">
@@ -464,7 +411,7 @@ export default function AssetPage({ params }: Props) {
                 Hash: {txHash}
               </p>
               <p className="text-slate-400 text-xs mt-2">
-                View on <a href={`https://arbitrum.io/explorer/tx/${txHash}`} target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline">Arbitrum Explorer</a>
+                View on <a href={`https://arbiscan.io/tx/${txHash}`} target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline">Arbiscan Explorer</a>
               </p>
             </div>
           )}
@@ -506,18 +453,18 @@ export default function AssetPage({ params }: Props) {
           <div className="space-y-6">
             <div className="flex items-center space-x-3 mb-4">
               <div className={`w-12 h-12 rounded-lg flex items-center justify-center text-xl font-medium text-white 
-                ${asset.type === 'scooter' ? 'bg-purple-500' : 
-                  asset.type === 'bike' ? 'bg-green-500' : 
-                  asset.type === 'desk' ? 'bg-blue-500' : 'bg-gray-500'}`}>
-                {asset.type.charAt(0).toUpperCase()}
+                ${vehicle.type === 'car' ? 'bg-blue-500' : 
+                  vehicle.type === 'motorcycle' ? 'bg-green-500' : 
+                  vehicle.type === 'truck' ? 'bg-orange-500' : 'bg-purple-500'}`}>
+                {vehicle.type.charAt(0).toUpperCase()}
               </div>
               <div>
                 <h2 className="text-xl font-bold text-white capitalize">
-                  {asset.type} #{asset.id}
+                  {vehicle.type} #{vehicle.id}
                 </h2>
                 <div className="flex items-center space-x-2">
-                  <span className="text-slate-400 text-sm">Rating:</span>
-                  <span className="text-slate-300 text-sm">{asset.rating}</span>
+                  <div className="text-yellow-400">{'★'.repeat(Math.floor(vehicle.rating))}</div>
+                  <span className="text-slate-300 text-sm">{vehicle.rating}</span>
                 </div>
               </div>
             </div>
@@ -525,57 +472,61 @@ export default function AssetPage({ params }: Props) {
             <div className="space-y-3 border-t border-slate-700 pt-4">
               <div className="flex justify-between items-center">
                 <span className="text-slate-400">Deposit Required</span>
-                <span className="text-white font-semibold">${asset.deposit} PYUSD</span>
+                <span className="text-white font-semibold">${vehicle.deposit} PYUSD</span>
               </div>
               
               <div className="flex justify-between items-center">
-                <span className="text-slate-400">Est. Duration</span>
-                <span className="text-white">{asset.estimatedDuration}</span>
+                <span className="text-slate-400">Hourly Rate</span>
+                <span className="text-white">${vehicle.hourlyRate} PYUSD/hour</span>
+              </div>
+              
+              <div className="flex justify-between items-center">
+                <span className="text-slate-400">Estimated Duration</span>
+                <span className="text-white">{vehicle.estimatedDuration}</span>
               </div>
 
-              {asset.distance && (
+              {vehicle.distance && (
                 <div className="flex justify-between items-center">
                   <span className="text-slate-400">Distance</span>
-                  <span className="text-white">{asset.distance}</span>
+                  <span className="text-white">{vehicle.distance}</span>
                 </div>
               )}
 
               <div className="pt-4 border-t border-slate-700">
-                <div className="text-slate-400 text-sm mb-1">Route Info</div>
-                <div className="text-white text-sm">{asset.route}</div>
+                <div className="text-slate-400 mb-1">Route</div>
+                <div className="text-white text-sm">{vehicle.route}</div>
               </div>
 
-              <div className="pt-2 text-slate-400 text-sm">
-                Location: {asset.location}
+              <div className="text-slate-400">
+                Location: {vehicle.location}
               </div>
             </div>
 
             <div className="pt-6 flex gap-3">
-              <button
+              <button 
                 onClick={startRental}
-                disabled={isLoading || !walletAddress || !asset.available}
-                className={`flex-1 py-3 px-4 rounded-lg font-medium transition-colors ${
-                  isLoading 
-                    ? 'bg-purple-800 text-slate-400 cursor-wait'
-                    : !walletAddress || !asset.available
-                    ? 'bg-slate-700 text-slate-400 cursor-not-allowed'
-                    : 'bg-purple-600 hover:bg-purple-700 text-white'
+                disabled={isLoading || !walletAddress || !vehicle.available}
+                className={`flex-1 py-2.5 px-4 rounded-lg font-medium text-center ${
+                  isLoading ? "bg-indigo-900/50 text-slate-400 cursor-not-allowed" 
+                    : !walletAddress || !vehicle.available
+                    ? "bg-slate-700 text-slate-400 cursor-not-allowed"
+                    : "bg-indigo-600 hover:bg-indigo-700 text-white"
                 }`}
               >
                 {isLoading ? (
-                  <span className="flex items-center justify-center">
+                  <div className="flex items-center justify-center">
                     <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                     </svg>
                     Processing...
-                  </span>
-                ) : !walletAddress ? (
-                  'Connect Wallet First'
-                ) : !asset.available ? (
-                  'Currently Unavailable'
+                  </div>
+                ) : !vehicle.available ? (
+                  "Not Available"
+                ) : rentalDetails && rentalDetails.active ? (
+                  "Currently Rented"
                 ) : (
-                  'Start Rental'
+                  "Start Rental"
                 )}
               </button>
             </div>

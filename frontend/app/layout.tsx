@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
+import Providers from "./providers";
 
 const geistSans = localFont({
 	src: "./fonts/GeistVF.woff",
@@ -14,8 +15,8 @@ const geistMono = localFont({
 });
 
 export const metadata: Metadata = {
-	title: "Self Workshop",
-	description: "Self Workshop",
+	title: "FlowRent - Cross-Chain Vehicle Rental Platform",
+	description: "FlowRent is a cross-chain vehicle rental platform powered by Self Protocol and LayerZero for seamless identity verification and payments.",
 };
 
 export default function RootLayout({
@@ -28,7 +29,8 @@ export default function RootLayout({
 			<body
 				className={`${geistSans.variable} ${geistMono.variable} antialiased`}
 			>
-				{children}
+				{/* Client-side providers */}
+				<Providers>{children}</Providers>
 			</body>
 		</html>
 	);

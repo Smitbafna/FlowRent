@@ -2,6 +2,7 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
+import VerificationStatus from "../components/VerificationStatus";
 
 type SourceEvent = { txHash: string; blockNumber: number; user: string; dstEid: number; configId: string };
 type DestEvent = { txHash: string; blockNumber: number; user: string; srcEid: number; timestamp: number };
@@ -71,6 +72,11 @@ export default function StatusPage() {
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Cross-chain Verification Status</h1>
           <p className="text-gray-600">Track your identity verification messages across Celo Alfajores and Arbitrum Sepolia testnets</p>
+        </div>
+        
+        {/* Personal Verification Status */}
+        <div className="mb-8">
+          <VerificationStatus />
         </div>
 
         {/* Controls */}

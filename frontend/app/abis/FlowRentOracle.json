@@ -1,0 +1,774 @@
+[
+  {
+    "type": "constructor",
+    "inputs": [
+      {
+        "name": "_escrowContract",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "_owner",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "applyRateAdjustment",
+    "inputs": [
+      {
+        "name": "rentalId",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      },
+      {
+        "name": "vehicleId",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      },
+      {
+        "name": "previousOdometer",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "previousTimestamp",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "authorizedFeeds",
+    "inputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bool",
+        "internalType": "bool"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "baseRates",
+    "inputs": [
+      {
+        "name": "",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "batchUpdatePricingData",
+    "inputs": [
+      {
+        "name": "vehicleIds",
+        "type": "bytes32[]",
+        "internalType": "bytes32[]"
+      },
+      {
+        "name": "pricingDataArray",
+        "type": "tuple[]",
+        "internalType": "struct FlowRentOracle.PricingData[]",
+        "components": [
+          {
+            "name": "odometer",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "timestamp",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "lastUpdated",
+            "type": "uint256",
+            "internalType": "uint256"
+          }
+        ]
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "calculateRate",
+    "inputs": [
+      {
+        "name": "vehicleId",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      },
+      {
+        "name": "previousOdometer",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "previousTimestamp",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "adjustedRate",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "distanceFactor",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "calculateRentalFee",
+    "inputs": [
+      {
+        "name": "vehicleId",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      },
+      {
+        "name": "startOdometer",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "endOdometer",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "startTime",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "endTime",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "baseFee",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "distanceFee",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "totalFee",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "emergencyRateOverride",
+    "inputs": [
+      {
+        "name": "rentalId",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      },
+      {
+        "name": "emergencyRate",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "reason",
+        "type": "string",
+        "internalType": "string"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "escrowContract",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "contract FlowRentEscrow"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "getPricingData",
+    "inputs": [
+      {
+        "name": "vehicleId",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "pricing",
+        "type": "tuple",
+        "internalType": "struct FlowRentOracle.PricingData",
+        "components": [
+          {
+            "name": "odometer",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "timestamp",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "lastUpdated",
+            "type": "uint256",
+            "internalType": "uint256"
+          }
+        ]
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "getVehicleData",
+    "inputs": [
+      {
+        "name": "vehicleId",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "data",
+        "type": "tuple",
+        "internalType": "struct FlowRentOracle.VehicleData",
+        "components": [
+          {
+            "name": "pricing",
+            "type": "tuple",
+            "internalType": "struct FlowRentOracle.PricingData",
+            "components": [
+              {
+                "name": "odometer",
+                "type": "uint256",
+                "internalType": "uint256"
+              },
+              {
+                "name": "timestamp",
+                "type": "uint256",
+                "internalType": "uint256"
+              },
+              {
+                "name": "lastUpdated",
+                "type": "uint256",
+                "internalType": "uint256"
+              }
+            ]
+          },
+          {
+            "name": "metadata",
+            "type": "tuple",
+            "internalType": "struct FlowRentOracle.VehicleMetadata",
+            "components": [
+              {
+                "name": "carType",
+                "type": "string",
+                "internalType": "string"
+              },
+              {
+                "name": "trim",
+                "type": "string",
+                "internalType": "string"
+              },
+              {
+                "name": "baseRate",
+                "type": "uint256",
+                "internalType": "uint256"
+              },
+              {
+                "name": "isActive",
+                "type": "bool",
+                "internalType": "bool"
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "getVehicleRate",
+    "inputs": [
+      {
+        "name": "vehicleId",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      },
+      {
+        "name": "previousOdometer",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "previousTimestamp",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "rate",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "distanceFactor",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "isAuthorizedFeed",
+    "inputs": [
+      {
+        "name": "feedAddress",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "authorized",
+        "type": "bool",
+        "internalType": "bool"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "owner",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "registerVehicle",
+    "inputs": [
+      {
+        "name": "vehicleId",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      },
+      {
+        "name": "carType",
+        "type": "string",
+        "internalType": "string"
+      },
+      {
+        "name": "trim",
+        "type": "string",
+        "internalType": "string"
+      },
+      {
+        "name": "baseRate",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "renounceOwnership",
+    "inputs": [],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "setAuthorizedFeed",
+    "inputs": [
+      {
+        "name": "feedAddress",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "authorized",
+        "type": "bool",
+        "internalType": "bool"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "toggleVehicleStatus",
+    "inputs": [
+      {
+        "name": "vehicleId",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "transferOwnership",
+    "inputs": [
+      {
+        "name": "newOwner",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "updatePricingData",
+    "inputs": [
+      {
+        "name": "vehicleId",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      },
+      {
+        "name": "odometer",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "timestamp",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "updateVehicleMetadata",
+    "inputs": [
+      {
+        "name": "vehicleId",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      },
+      {
+        "name": "carType",
+        "type": "string",
+        "internalType": "string"
+      },
+      {
+        "name": "trim",
+        "type": "string",
+        "internalType": "string"
+      },
+      {
+        "name": "baseRate",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "vehicleData",
+    "inputs": [
+      {
+        "name": "",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "pricing",
+        "type": "tuple",
+        "internalType": "struct FlowRentOracle.PricingData",
+        "components": [
+          {
+            "name": "odometer",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "timestamp",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "lastUpdated",
+            "type": "uint256",
+            "internalType": "uint256"
+          }
+        ]
+      },
+      {
+        "name": "metadata",
+        "type": "tuple",
+        "internalType": "struct FlowRentOracle.VehicleMetadata",
+        "components": [
+          {
+            "name": "carType",
+            "type": "string",
+            "internalType": "string"
+          },
+          {
+            "name": "trim",
+            "type": "string",
+            "internalType": "string"
+          },
+          {
+            "name": "baseRate",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "isActive",
+            "type": "bool",
+            "internalType": "bool"
+          }
+        ]
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "event",
+    "name": "DataFeedAuthorized",
+    "inputs": [
+      {
+        "name": "feedAddress",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "authorized",
+        "type": "bool",
+        "indexed": false,
+        "internalType": "bool"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "OwnershipTransferred",
+    "inputs": [
+      {
+        "name": "previousOwner",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "newOwner",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "PricingDataUpdated",
+    "inputs": [
+      {
+        "name": "vehicleId",
+        "type": "bytes32",
+        "indexed": true,
+        "internalType": "bytes32"
+      },
+      {
+        "name": "data",
+        "type": "tuple",
+        "indexed": false,
+        "internalType": "struct FlowRentOracle.PricingData",
+        "components": [
+          {
+            "name": "odometer",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "timestamp",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "lastUpdated",
+            "type": "uint256",
+            "internalType": "uint256"
+          }
+        ]
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "RateAdjustmentApplied",
+    "inputs": [
+      {
+        "name": "rentalId",
+        "type": "bytes32",
+        "indexed": true,
+        "internalType": "bytes32"
+      },
+      {
+        "name": "oldRate",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      },
+      {
+        "name": "newRate",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "RateCalculated",
+    "inputs": [
+      {
+        "name": "rentalId",
+        "type": "bytes32",
+        "indexed": true,
+        "internalType": "bytes32"
+      },
+      {
+        "name": "rate",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      },
+      {
+        "name": "distanceFactor",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "VehicleRegistered",
+    "inputs": [
+      {
+        "name": "vehicleId",
+        "type": "bytes32",
+        "indexed": true,
+        "internalType": "bytes32"
+      },
+      {
+        "name": "carType",
+        "type": "string",
+        "indexed": false,
+        "internalType": "string"
+      },
+      {
+        "name": "trim",
+        "type": "string",
+        "indexed": false,
+        "internalType": "string"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "error",
+    "name": "OwnableInvalidOwner",
+    "inputs": [
+      {
+        "name": "owner",
+        "type": "address",
+        "internalType": "address"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "OwnableUnauthorizedAccount",
+    "inputs": [
+      {
+        "name": "account",
+        "type": "address",
+        "internalType": "address"
+      }
+    ]
+  }
+]
