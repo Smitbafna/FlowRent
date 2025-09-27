@@ -1,96 +1,70 @@
-# Self Protocol + LayerZero (Celo → Arbitrum)
+# FlowRent
 
-Build a cross-chain verification flow with Self Protocol on Celo Mainnet and forward results to Arbitrum One via LayerZero.
+A global pay-as-you-go vehicle rental app with passport-based KYC via SelfXYZ, eliminating traditional FX and enabling seamless cross-chain PYUSD payments through LayerZero.
 
-## 📁 Project Structure
-```
-self-layerzero-example/
-├── app/                      # Frontend (Next.js)
-│   └── app/
-│       ├── page.tsx          # QR + Connect Wallet (no manual address input)
-│       └── status/page.tsx   # Recent sends/receipts (polling)
-└── contracts/                # Contracts + scripts (Foundry)
-    ├── src/
-    │   ├── ProofOfHumanOApp.sol      # Celo sender (Self + LZ OApp, has withdraw())
-    │   └── ProofOfHumanReceiver.sol  # Arbitrum receiver
-    ├── script/
-    │   └── deploy-oapp-cross-chain.sh
-    ├── Makefile              # make deploy, set-scope, fund-source, withdraw-source...
-    └── .env(.example)
-```
+Our app lets you rent vehicles anywhere in the world and pay only for what you use. Passport-based KYC via SelfXYZ ensures instant verification while giving you control over which details (name, country, age) are disclosed. Traditional foreign exchange hassles are eliminated with PYUSD, and payments are streamed via Sablier and settled across chains using LayerZero.
 
-## ✅ Prerequisites
-- Node.js 20
-- Foundry toolchain
-- Self App (iOS/Android)
-- Wallet funded on Celo (deploy + funding) and Arbitrum (deploy)
-- Note: Celo Alfajores is not supported by LZ v2
 
-## 🚀 Quick Start
+**Traveler Scenario: Business Trip from Mumbai to San Francisco**
 
-```bash
-# 1) Install
-cd contracts && npm install && forge install
-cd ../app && npm install
+1. **Pre-trip Preparation**
+   * You download the FlowRent app and complete one-time verification using passport via SelfXYZ.
+   * Only your name,country and age is disclosed.
 
-# 2) Configure contracts/.env (edit PRIVATE_KEY, VERIFICATION_CONFIG_ID, SCOPE_SEED)
-cd ../contracts && cp .env.example .env
+2. **Arrival in San Francisco**
+   * Upon landing, you select a Tesla Model 3 for going to the hotel.
 
-# 3) Deploy (deploys + verifies + sets scope/peers + writes app/.env)
-make deploy
+3. **Seamless Rental Process**
+   * Your passport verification is instantly recognized across chains via LayerZero.
+   * You deposit an initial amount of PYUSD , which is held in the FlowRent escrow contract.
+   * You unlock the Tesla and begin your rental.
 
-# 4) Fund source (required for auto-forward; recommend ≥ 0.5 CELO)
-make fund-source AMOUNT=0.5
+4. **Pay as You Go**
+   * As you drive, PYUSD payments stream from the deposit to the vehicle owner via Sablier.
+   * When driving in congested areas, the rate automatically adjusts based on telemetry data using [Fleet API](https://developer.tesla.com/docs/fleet-api/fleet-telemetry/available-data?) from Tesla.
+   * Your dashboard shows the remaining deposit in real time.
 
-# 5) Run frontend
-cd ../app && npm run dev   # http://localhost:3000
-```
+5. **Return and Settlement**
+   * After completing the trip, you return the vehicle to the designated area.
+   * The final odometer reading and conditions are recorded via the FlowRent Oracle.
+   * The remaining deposit is immediately returned to the connected wallet.
+   * You receive a dynamic NFT based receipt for corporate expense reporting.
 
-On the homepage:
-- Connect Wallet → scan QR with Self App → auto navigate to `/status` for delivery logs
+**Benefits**
+- No need for international credit cards or currency exchange
+- No waiting for security deposit refunds
+- Pay-per-minute pricing rather than full-day charges
+- Transparent, immutable record of all transactions
+- Streamlined expense reporting 
 
-## 🧠 How It Works
-- Verification is initiated from the Self mobile app and executed inside a TEE server (trusted execution environment) that submits the proof to your on‑chain endpoint on Celo.
-- Your endpoint is the OApp’s `verifySelfProof` (inherited from `SelfVerificationRoot`). It calls the Self Hub on Celo to validate the proof and your policy (e.g., minimum age, exclude country) and normalizes the result for retrieval.
-- After success, your overridden `onVerificationSuccess` hook runs and calls `_lzSend` with a minimal payload. LayerZero V2 delivers it to Arbitrum (EID 30110), where the receiver persists the verification.
+This cross-border rental experience demonstrates how FlowRent eliminates traditional friction points in international vehicle rentals while providing enhanced security and transparency for both renters and vehicle owners.
 
-```mermaid
-sequenceDiagram
-    autonumber
-    participant User as Self App (mobile)
-    participant TEE as TEE server
-    participant OApp as Celo OApp.verifySelfProof
-    participant Hub as Self Hub (Celo)
-    participant LZ as LayerZero Endpoint V2
-    participant Arbitrum as Arbitrum Receiver Contract
+## Deployment Addresses
 
-    User->>TEE: Scan QR / deeplink
-    TEE->>OApp: submit proof to verifySelfProof(userId, proof)
-    Note right of OApp: inherited from SelfVerificationRoot
-    OApp->>Hub: validate proof + policy checks
-    Note right of Hub: minimum age, exclude country, etc.
-    Hub-->>OApp: verification ok + attributes
-    OApp->>OApp: normalize result for storage
-    OApp->>OApp: onVerificationSuccess (override)
-    OApp->>LZ: _lzSend(dst=Arbitrum EID 30110, gas=200k)
-    LZ-->>Arbitrum: deliver message
-    Arbitrum->>Arbitrum: _lzReceive() persist verification
-```
+- [VERIFICATION_CONTRACT_ADDRESS](https://sepolia.arbiscan.io/address/0x401F7Fa7DCaE2E85c491f5EA13078d67fEA2C156): 0x401F7Fa7DCaE2E85c491f5EA13078d67fEA2C156
+- [FLOWRENT_REGISTRY_DEPLOYER](https://sepolia.arbiscan.io/address/0x27Fd325E871D936A74eD6bD03271dec01bf0878B): 0x27Fd325E871D936A74eD6bD03271dec01bf0878B
+- [FLOWRENT_REGISTRY_ADDRESS](https://sepolia.arbiscan.io/address/0x0d28c9ad837BCE050c7ce03620E43303898F4E9C): 0x0d28c9ad837BCE050c7ce03620E43303898F4E9C
+- [FLOWRENT_REGISTRY_EXTENSION_ADDRESS](https://sepolia.arbiscan.io/address/0xD4470930415bEdf50C27adB3F66e3ba0E95a696a): 0xD4470930415bEdf50C27adB3F66e3ba0E95a696a
+- [FLOWRENT_FACTORY_DEPLOYER](https://sepolia.arbiscan.io/address/0x9DFB057db24d8f90EF946C8C8D228715C9c42Aab): 0x9DFB057db24d8f90EF946C8C8D228715C9c42Aab
+- [FLOWRENT_FACTORY_CORE_ADDRESS](https://sepolia.arbiscan.io/address/0xE07245a5C8C353d7Fb7340c51666747cA6E4c97d): 0xE07245a5C8C353d7Fb7340c51666747cA6E4c97d
+- [FLOWRENT_DEPLOY_HELPER_ADDRESS](https://sepolia.arbiscan.io/address/0xC2A56703D8Dcc0A81d3cC8aC74a7D2555b440744): 0xC2A56703D8Dcc0A81d3cC8aC74a7D2555b440744
+- [FLOWRENT_FACTORY_EXTENSION_ADDRESS](https://sepolia.arbiscan.io/address/0x27E14E0def858CBCD3a6231BBb74c76d37Cf6107): 0x27E14E0def858CBCD3a6231BBb74c76d37Cf6107
 
-##
+**Main Addresses**
 
-## 💡 Best Practices
-- Keep cross-chain payload minimal (e.g., `userAddress`, `verificationConfigId`, small `timestamp/flag`)
-- Avoid large strings/arrays; fees grow with bytes + dst gas
-- Fund before testing; insufficient funds will skip sends silently
+- [FLOWRENT_ESCROW_ADDRESS](https://sepolia.arbiscan.io/address/0x1d95021415F785a8941B9791AaC99D3b745bE8eb): 0x1d95021415F785a8941B9791AaC99D3b745bE8eb 
+- [FLOWRENT_ORACLE_ADDRESS](https://sepolia.arbiscan.io/address/0xD14770ea4c3EeD672F437090863D5BFf68AB9384): 0xD14770ea4c3EeD672F437090863D5BFf68AB9384
 
-## 🔗 Network
-- Celo Mainnet (EID 30125)
-  - RPC: https://forno.celo.org, Explorer: https://celoscan.io
-- Arbitrum One (EID 30110)
-  - RPC: https://arb1.arbitrum.io/rpc, Explorer: https://arbiscan.io
 
-## 📚 References
-- Self Docs: https://docs.self.xyz
-- Self Tools: https://tools.self.xyz
-- LayerZero OApp: https://docs.layerzero.network
+---
+
+## Further Documentation
+
+- [Architecture Guide](./ARCHITECTURE.md)
+- [Deployment Guide](./DEPLOYMENT_GUIDE.md)
+- [Scripts Reference](./SCRIPTS_GUIDE.md)
+
+
+
+
+

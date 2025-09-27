@@ -8,7 +8,7 @@ const Header = () => {
   const [showWalletTooltip, setShowWalletTooltip] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   
- 
+  // Mock data - in real app these would come from context/state
   const verificationStatus = {
     isVerified: true,
     method: 'Passport', // 'Passport', 'Orb', or 'Device'
