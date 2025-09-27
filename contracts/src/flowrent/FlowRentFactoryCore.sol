@@ -121,4 +121,5 @@ contract FlowRentFactoryCore is Ownable {
         return registry.isValidFlowRentContract(contractAddress);
     }
 
+    // All implementation moved to registry and deploy helper
 }
