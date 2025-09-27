@@ -1,3 +1,9 @@
 forge-std/=lib/forge-std/src/
 @selfxyz/contracts/=node_modules/@selfxyz/contracts/
 @openzeppelin/=lib/openzeppelin-contracts/
+@layerzerolabs/oapp-evm/=node_modules/@layerzerolabs/oapp-evm/
+@layerzerolabs/lz-evm-protocol-v2/=node_modules/@layerzerolabs/lz-evm-protocol-v2/
+@layerzerolabs/lz-evm-messagelib-v2/=node_modules/@layerzerolabs/lz-evm-messagelib-v2/
+solidity-bytes-utils/=node_modules/solidity-bytes-utils/
+@sablier/v2-core/=lib/v2-core/
+@prb/math/=lib/prb-math/

@@ -1,0 +1,26 @@
+# Compiler files
+cache/
+out/
+artifacts/
+lib/
+
+# Ignores development broadcast logs
+!/broadcast
+/broadcast/*/31337/
+/broadcast/**/dry-run/
+
+# Docs
+docs/
+
+# Dotenv file
+.env
+
+# Node modules (if any JS tooling is used)
+node_modules/
+
+# Misc
+*.log
+*.tsbuildinfo
+*.local
+*.swp
+*.swo

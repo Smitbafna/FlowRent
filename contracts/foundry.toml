@@ -1,53 +1,9 @@
-# Full reference https://github.com/foundry-rs/foundry/tree/master/crates/config
-
 [profile.default]
-  auto_detect_solc = false
-  block_timestamp = 1_735_702_400 # January 1, 2025 at 00:00 GMT
-  bytecode_hash = "none"
-  evm_version = "paris"           # See https://www.evmdiff.com/features?name=PUSH0&kind=opcode
-  fuzz = { runs = 1_000 }
-  gas_reports = ["*"]
-  libs = ["lib"]
-  optimizer = true
-  optimizer_runs = 10_000
-  out = "out"
-  script = "script"
-  solc = "0.8.28"
-  src = "src"
-  test = "test"
-  remappings = [
-    '@layerzerolabs/oapp-evm/contracts/=lib/LayerZero-v2/packages/layerzero-v2/evm/oapp/contracts/',
-    '@layerzerolabs/lz-evm-protocol-v2/contracts/=lib/LayerZero-v2/packages/layerzero-v2/evm/protocol/contracts/',
-    '@layerzerolabs/lz-evm-messagelib-v2/contracts/=lib/LayerZero-v2/packages/layerzero-v2/evm/messagelib/contracts/',
-    '@openzeppelin/contracts/=lib/openzeppelin-contracts/contracts/',
-    '@selfxyz/contracts/=node_modules/@selfxyz/contracts/',
-    'forge-std/=lib/forge-std/src/',
-    'solidity-bytes-utils/=lib/solidity-bytes-utils/',
-  ]
+src = "src"
+out = "out"
+libs = ["lib"]
+via_ir = true
+optimizer = true
+optimizer_runs = 200
 
-[profile.ci]
-  fuzz = { runs = 10_000 }
-  verbosity = 4
-
-[etherscan]
-  celo = { key = "${CELOSCAN_API_KEY}", url = "https://api.celoscan.io/api", chain = 42220 }
-  celo-alfajores = { key = "${CELOSCAN_API_KEY}", url = "https://api-alfajores.celoscan.io/api", chain = 44787 }
-  arbitrum-one = { key = "${ARBISCAN_API_KEY}", url = "https://api.arbiscan.io/api", chain = 42161 }
-  arbitrum-sepolia = { key = "${ARBISCAN_API_KEY}", url = "https://api-sepolia.arbiscan.io/api", chain = 421614 }
-
-[fmt]
-  bracket_spacing = true
-  int_types = "long"
-  line_length = 120
-  multiline_func_header = "all"
-  number_underscore = "thousands"
-  quote_style = "double"
-  tab_width = 4
-  wrap_comments = true
-
-[rpc_endpoints]
-  celo = "https://forno.celo.org"
-  celo-alfajores = "https://alfajores-forno.celo-testnet.org"
-  arbitrum-one = "https://arb1.arbitrum.io/rpc"
-  arbitrum-sepolia = "https://sepolia-rollup.arbitrum.io/rpc"
-  localhost = "http://localhost:8545"
+# See more config options https://github.com/foundry-rs/foundry/blob/master/crates/config/README.md#all-options

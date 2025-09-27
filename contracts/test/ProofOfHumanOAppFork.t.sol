@@ -12,13 +12,13 @@ contract ProofOfHumanOAppForkTest is Test {
     address constant CELO_LZ_ENDPOINT = 0x1a44076050125825900e736c501f859c50fE728c;
     uint32 constant CELO_EID = 30_125;
 
-    // Arbitrum One
+    // Base Mainnet
     address constant BASE_LZ_ENDPOINT = 0x1a44076050125825900e736c501f859c50fE728c;
-    uint32 constant BASE_EID = 30_110;
+    uint32 constant BASE_EID = 30_184;
 
     // RPC URLs
     string constant CELO_RPC = "https://forno.celo.org";
-    string constant BASE_RPC = "https://arb1.arbitrum.io/rpc";
+    string constant BASE_RPC = "https://mainnet.base.org";
 
     // Test params
     bytes32 constant CONFIG_ID = bytes32(uint256(0x1234));
@@ -31,7 +31,7 @@ contract ProofOfHumanOAppForkTest is Test {
 
     // Fork ids
     uint256 celoFork;
-    uint256 arbitrumFork;
+    uint256 baseFork;
 
     // Deployed contracts
     ProofOfHumanOApp source;
@@ -40,10 +40,10 @@ contract ProofOfHumanOAppForkTest is Test {
     function setUp() public {
         // Create forks
         celoFork = vm.createFork(CELO_RPC);
-        arbitrumFork = vm.createFork(BASE_RPC);
+        baseFork = vm.createFork(BASE_RPC);
 
-        // Deploy destination (Arbitrum)
-        vm.selectFork(arbitrumFork);
+        // Deploy destination (Base)
+        vm.selectFork(baseFork);
         vm.startPrank(owner);
         dest = new ProofOfHumanReceiver(BASE_LZ_ENDPOINT, owner);
         vm.stopPrank();
@@ -59,7 +59,7 @@ contract ProofOfHumanOAppForkTest is Test {
         vm.prank(owner);
         source.setPeer(BASE_EID, bytes32(uint256(uint160(address(dest)))));
 
-        vm.selectFork(arbitrumFork);
+        vm.selectFork(baseFork);
         vm.prank(owner);
         dest.setPeer(CELO_EID, bytes32(uint256(uint160(address(source)))));
 
@@ -72,7 +72,7 @@ contract ProofOfHumanOAppForkTest is Test {
         vm.label(address(dest), "Dest");
         vm.label(CELO_HUB, "Celo Hub");
         vm.label(CELO_LZ_ENDPOINT, "Celo LZ Endpoint");
-        vm.label(BASE_LZ_ENDPOINT, "Arbitrum LZ Endpoint");
+        vm.label(BASE_LZ_ENDPOINT, "Base LZ Endpoint");
         vm.label(owner, "Owner");
         vm.label(user, "User");
     }
