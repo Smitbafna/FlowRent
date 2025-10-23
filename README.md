@@ -1,4 +1,4 @@
-# FlowRent
+# RentalRide
 
 A global pay-as-you-go vehicle rental app with passport-based KYC via SelfXYZ, eliminating traditional FX and enabling seamless cross-chain PYUSD payments through LayerZero.
 
